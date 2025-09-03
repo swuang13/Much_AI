@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}자산 관리 역량 진단 - Much{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 헤더 섹션 -->
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <h1 class="display-4 fw-bold text-primary mb-3">
+                <i class="fas fa-chart-line me-3"></i>자산 관리 역량 진단
+            </h1>
+            <p class="lead text-muted">
+                AI가 코칭하는 Much와 함께 현재 자산 관리 역량을 진단하고 맞춤형 피드백을 받아보세요
+            </p>
+        </div>
+    </div>
+
+    <!-- 진단 유형 선택 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>진단 유형 선택
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-primary">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-star text-primary fa-3x mb-3"></i>
+                                    <h5 class="card-title">기본 진단</h5>
+                                    <p class="card-text">자산 관리의 기본 역량을 체크하는 간단한 진단</p>
+                                    <p class="text-muted small">소요시간: 약 10분</p>
+                                    <a href="{% url 'asset:start_assessment' %}" class="btn btn-primary">
+                                        시작하기
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-warning">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-chart-bar text-warning fa-3x mb-3"></i>
+                                    <h5 class="card-title">심화 진단</h5>
+                                    <p class="card-text">더 상세한 분석을 통한 종합적인 역량 진단</p>
+                                    <p class="text-muted small">소요시간: 약 20분</p>
+                                    <a href="{% url 'asset:start_assessment' %}" class="btn btn-warning">
+                                        시작하기
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 border-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-trophy text-success fa-3x mb-3"></i>
+                                    <h5 class="card-title">종합 진단</h5>
+                                    <p class="card-text">전문가 수준의 상세한 분석과 맞춤형 솔루션</p>
+                                    <p class="text-muted small">소요시간: 약 30분</p>
+                                    <a href="{% url 'asset:start_assessment' %}" class="btn btn-success">
+                                        시작하기
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 진단 영역 소개 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>진단 영역 안내
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-primary text-white rounded-circle p-3 me-3">
+                                    <i class="fas fa-book fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h5>금융 리터러시</h5>
+                                    <p class="text-muted">금융 상품 이해도, 경제 지식, 금융 시장 인식</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-warning text-white rounded-circle p-3 me-3">
+                                    <i class="fas fa-shield-alt fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h5>위험 관리</h5>
+                                    <p class="text-muted">보험 활용, 비상금 관리, 위험 분산 전략</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-success text-white rounded-circle p-3 me-3">
+                                <i class="fas fa-chart-line fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h5>투자 지식</h5>
+                                    <p class="text-muted">투자 상품 이해, 포트폴리오 구성, 수익률 관리</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-info text-white rounded-circle p-3 me-3">
+                                    <i class="fas fa-credit-card fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h5>부채 관리</h5>
+                                    <p class="text-muted">신용 관리, 대출 상환, 부채 비율 조절</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 진단 기록 보기 -->
+    {% if user.is_authenticated %}
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-history me-2"></i>진단 기록
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">이전 진단 결과를 확인하고 진행 상황을 파악해보세요.</p>
+                    <a href="{% url 'asset:assessment_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list me-2"></i>진단 기록 보기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 시작하기 버튼 -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="{% url 'asset:start_assessment' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-play me-2"></i>진단 시작하기
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

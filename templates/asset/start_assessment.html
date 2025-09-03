@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}진단 시작 - 자산 관리 역량 진단{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i class="fas fa-play-circle me-2"></i>진단 시작하기
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">진단 유형을 선택해주세요</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="assessment_type" id="basic" value="basic" checked>
+                                        <label class="form-check-label" for="basic">
+                                            <div class="card border-primary">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-star text-primary fa-2x mb-2"></i>
+                                                    <h6>기본 진단</h6>
+                                                    <small class="text-muted">10분 소요</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="assessment_type" id="advanced" value="advanced">
+                                        <label class="form-check-label" for="advanced">
+                                            <div class="card border-warning">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-chart-bar text-warning fa-2x mb-2"></i>
+                                                    <h6>심화 진단</h6>
+                                                    <small class="text-muted">20분 소요</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="assessment_type" id="comprehensive" value="comprehensive">
+                                        <label class="form-check-label" for="comprehensive">
+                                            <div class="card border-success">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-trophy text-success fa-2x mb-2"></i>
+                                                    <h6>종합 진단</h6>
+                                                    <small class="text-muted">30분 소요</small>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>진단 안내사항</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>진단은 총 4개 영역(금융 리터러시, 위험 관리, 투자 지식, 부채 관리)으로 구성됩니다.</li>
+                                <li>각 질문에 대해 솔직하게 답변해주시면 더 정확한 결과를 얻을 수 있습니다.</li>
+                                <li>진단 중간에 중단하실 수 있으며, 나중에 이어서 진행할 수 있습니다.</li>
+                                <li>진단 완료 후 상세한 피드백과 개선 방안을 제공해드립니다.</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>진단 시작하기
+                            </button>
+                            <a href="{% url 'asset:home' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>돌아가기
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

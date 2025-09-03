@@ -1,0 +1,32 @@
+Django==5.2.5
+asgiref==3.9.1
+sqlparse==0.5.3
+typing_extensions==4.15.0
+
+# 개발 및 디버깅
+django-debug-toolbar==4.3.0
+
+# 환경 변수 관리
+python-dotenv==1.0.0
+
+# 데이터베이스 (SQLite 기본, 필요시 변경)
+# psycopg2-binary==2.9.9  # PostgreSQL
+# mysqlclient==2.2.0      # MySQL
+
+# 정적 파일 관리
+django-compressor==4.4
+
+# 이미지 처리
+Pillow==10.2.0
+
+# API 개발 (향후 확장용)
+# djangorestframework==3.14.0
+
+# 테스트
+pytest==7.4.3
+pytest-django==4.7.0
+
+# 코드 품질
+black==23.12.1
+flake8==7.0.0
+isort==5.13.2
