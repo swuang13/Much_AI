@@ -3,10 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import FieldError
 from django.utils import timezone
-from django.db.models import Q
-from django.db.models import Sum, Count
-from django.db.models.functions import TruncDate
+from django.db.models import F, Q, Sum, Count, Value, CharField
+from django.db.models.functions import TruncDate, Coalesce, NullIf, Concat, Cast
 import json
 from datetime import date, timedelta
 
@@ -20,67 +20,220 @@ def reward_home(request):
     """리워드 시스템 메인 페이지"""
     return render(request, 'reward/reward_home.html')
 
+def _points_qs_for(profile, user):
+    """PointHistory가 user_profile FK인지 user FK인지에 따라 안전하게 필터."""
+    try:
+        return PointHistory.objects.filter(user_profile=profile)
+    except FieldError:
+        return PointHistory.objects.filter(user=user)
+
+def _ua_qs_for(profile):
+    try:
+        return UserAchievement.objects.filter(user_profile=profile)
+    except FieldError:
+        # 다른 스키마일 경우 여기에 맞게 보완
+        return UserAchievement.objects.none()
+
+def _lu_qs_for(profile):
+    try:
+        return LevelUpHistory.objects.filter(user_profile=profile)
+    except FieldError:
+        return LevelUpHistory.objects.none()
+
+def _benefit_user_qs(user, profile=None):
+    """UserBenefit: user 우선, 없으면 user_profile도 시도"""
+    try:
+        return UserBenefit.objects.filter(user=user).select_related('benefit')
+    except FieldError:
+        if profile is not None:
+            try:
+                return UserBenefit.objects.filter(user_profile=profile).select_related('benefit')
+            except FieldError:
+                pass
+        return UserBenefit.objects.none()
+    
+def _attempts_qs_for(profile, user):
+    """QuizAttempt: user_profile 또는 user 스키마 모두 대응"""
+    try:
+        return QuizAttempt.objects.filter(user_profile=profile)
+    except FieldError:
+        return QuizAttempt.objects.filter(user=user)
+
+def _answers_qs_for(profile, user):
+    """
+    QuizAnswer: 직접 user 필드가 없으므로 attempt FK를 따라가서 필터링.
+    스키마가 user_profile 기반이면 attempt__user_profile,
+    user 기반이면 attempt__user 로 자동 대응.
+    """
+    try:
+        # 가장 흔한 스키마: QuizAttempt(user_profile=...)
+        return QuizAnswer.objects.filter(attempt__user_profile=profile)
+    except FieldError:
+        # 다른 스키마: QuizAttempt(user=...)
+        return QuizAnswer.objects.filter(attempt__user=user)
+
+
 @login_required
-def profile_dashboard(request):
-    """사용자 프로필 대시보드"""
-    profile, created = UserProfile.objects.get_or_create(user=request.user)
-    
-    # 최근 활동 기록
-    recent_points = PointHistory.objects.filter(user_profile=profile).order_by('-created_at')[:10]
-    recent_achievements = UserAchievement.objects.filter(user_profile=profile).order_by('-earned_at')[:5]
-    recent_level_ups = LevelUpHistory.objects.filter(user_profile=profile).order_by('-created_at')[:5]
-    
-    # 사용 가능한 혜택
+def dashboard(request):
+    """통합 사용자 대시보드"""
+    user = request.user
+    tznow = timezone.now()
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+
+    # ==== 프로필 기반 최근 내역 ====
+    recent_points      = _points_qs_for(profile, user).order_by('-created_at')[:10]
+    recent_achievements = _ua_qs_for(profile).order_by('-earned_at')[:5]
+    recent_level_ups   = _lu_qs_for(profile).order_by('-created_at')[:5]
+
     available_benefits = FinancialBenefit.objects.filter(
         is_active=True,
         required_level__lte=profile.current_level,
         required_points__lte=profile.total_points
     )
-    
+
     # 업적 진행 상황
     achievements = Achievement.objects.filter(is_active=True)
-    user_achievements = UserAchievement.objects.filter(user_profile=profile)
+    user_achievements = _ua_qs_for(profile)
     achievement_progress = []
-    
     for achievement in achievements:
         if user_achievements.filter(achievement=achievement).exists():
             progress = 100
             status = "달성"
+            current_value = getattr(profile, 'current_level', 0)  # 표시에 쓰일 값
         else:
-            # 진행률 계산 (간단한 예시)
             if achievement.achievement_type == 'quiz':
-                current_value = profile.quizzes_completed
+                current_value = getattr(profile, 'quizzes_completed', 0)
             elif achievement.achievement_type == 'assessment':
-                current_value = profile.assessments_completed
+                current_value = getattr(profile, 'assessments_completed', 0)
             elif achievement.achievement_type == 'plan':
-                current_value = profile.plans_created
+                current_value = getattr(profile, 'plans_created', 0)
             elif achievement.achievement_type == 'streak':
-                current_value = profile.streak_days
+                current_value = getattr(profile, 'streak_days', 0)
             elif achievement.achievement_type == 'level':
-                current_value = profile.current_level
+                current_value = getattr(profile, 'current_level', 0)
             else:
                 current_value = 0
-            
-            progress = min(int((current_value / achievement.requirement_value) * 100), 100)
+            req = max(1, getattr(achievement, 'requirement_value', 1))
+            progress = min(int((current_value / req) * 100), 100)
             status = "진행중" if progress < 100 else "달성"
-        
+
         achievement_progress.append({
             'achievement': achievement,
             'progress': progress,
             'status': status,
-            'current_value': current_value if 'current_value' in locals() else 0
+            'current_value': current_value
         })
-    
-    context = {
-        'profile': profile,
-        'recent_points': recent_points,
-        'recent_achievements': recent_achievements,
-        'recent_level_ups': recent_level_ups,
-        'available_benefits': available_benefits,
-        'achievement_progress': achievement_progress,
-    }
-    
-    return render(request, 'reward/profile_dashboard.html', context)
+
+    # ==== 리더보드/차트용 통계 ====
+    # 총 포인트(누적) – user_profile 우선, 없으면 user 기준
+    total_points = _points_qs_for(profile, user).aggregate(s=Sum('points'))['s'] or 0
+
+    # 레벨 진행도 (1000pt 단위 예시 규칙; 필요하면 threshold table로 바꿔줄게)
+    cur_level = (total_points // 1000) + 1
+    cur_level_base = (cur_level - 1) * 1000
+    next_level_points = cur_level * 1000
+    progress_rate = int(((total_points - cur_level_base) / max(1, next_level_points - cur_level_base)) * 100)
+    points_to_next = max(0, next_level_points - total_points)
+
+    # 7일 포인트 추이 (user_profile/user 자동 판별)
+    labels, data_points = [], []
+    for i in range(6, -1, -1):
+        day = (tznow - timedelta(days=i)).date()
+        labels.append(day.strftime('%m/%d'))
+        pts = _points_qs_for(profile, user).filter(created_at__date=day).aggregate(s=Sum('points'))['s'] or 0
+        data_points.append(int(pts))
+
+    # (A) 정답률 계산
+    attempts_qs = _attempts_qs_for(profile, user)
+    total_attempts = attempts_qs.count()
+    correct_answers = _answers_qs_for(profile, user).filter(is_correct=True).count()
+    accuracy = round((correct_answers / total_attempts) * 100, 1) if total_attempts else 0.0
+
+
+
+    last_30 = tznow.date() - timedelta(days=29)
+    activity_days = (
+        _points_qs_for(profile, user)
+        .filter(created_at__date__gte=last_30)
+        .values_list('created_at__date', flat=True)
+        .distinct()
+    )
+    activity_set, streak = set(activity_days), 0
+    d = tznow.date()
+    while d in activity_set:
+        streak += 1
+        d = d - timedelta(days=1)
+
+    achievements_count = _ua_qs_for(profile).count()
+    # (C) 최근 사용 혜택
+    used_benefits = _benefit_user_qs(user, profile).order_by('-activated_at')[:5]
+
+
+    # 미니 리더보드 (총 포인트 상위 5)
+    # ==== 미니 리더보드 (총 포인트 상위 5) ====
+    leaderboard = []
+    try:
+        # 스키마 A: PointHistory → user_profile → user
+        raw = (
+            PointHistory.objects
+            .select_related('user_profile__user')
+            .values('user_profile__user__id', 'user_profile__user__username')
+            .annotate(total=Sum('points'))
+            .order_by('-total')[:5]
+        )
+        leaderboard = [
+            {
+                'display_name': (row.get('user_profile__user__username') or f"user#{row.get('user_profile__user__id')}"),
+                'total': row.get('total') or 0
+            }
+            for row in raw
+        ]
+    except Exception:
+        # 스키마 B: PointHistory → user
+        try:
+            raw = (
+                PointHistory.objects
+                .select_related('user')
+                .values('user__id', 'user__username')
+                .annotate(total=Sum('points'))
+                .order_by('-total')[:5]
+            )
+            leaderboard = [
+                {
+                    'display_name': (row.get('user__username') or f"user#{row.get('user__id')}"),
+                    'total': row.get('total') or 0
+                }
+                for row in raw
+            ]
+        except Exception:
+            leaderboard = []
+
+        context = {
+            # 프로필 섹션
+            'profile': profile,
+            'recent_points': recent_points,
+            'recent_achievements': recent_achievements,
+            'recent_level_ups': recent_level_ups,
+            'available_benefits': available_benefits,
+            'achievement_progress': achievement_progress,
+
+            # KPI/차트 섹션
+            'total_points': total_points,
+            'cur_level': cur_level,
+            'next_level_points': next_level_points,
+            'points_to_next': points_to_next,
+            'progress_rate': progress_rate,
+            'labels': labels,
+            'data_points': data_points,
+            'total_attempts': total_attempts,
+            'correct_answers': correct_answers,
+            'accuracy': accuracy,
+            'streak': streak,
+            'achievements_count': achievements_count,
+            'used_benefits': used_benefits,
+            'leaderboard': leaderboard,
+        }
+        return render(request, 'reward/dashboard.html', context)
 
 @login_required
 def quiz_list(request):
