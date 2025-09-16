@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block title %}대시보드{% endblock %}
+{% load tz %}
 
 {% block content %}
 <style>
@@ -216,7 +217,13 @@
           <tbody>
           {% for p in recent_points %}
             <tr>
-              <td>{{ p.activated_at|date:"Y-m-d H:i" }}</td>
+              <td>
+                {% if p.when %}
+                  {{ p.when|localtime|date:"Y-m-d H:i" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
               <td>{{ p.reason|default:"기타" }}</td>
               <td style="text-align:right;" class="{% if p.points >= 0 %}pos{% else %}neg{% endif %}">
                 {% if p.points >= 0 %}+{% endif %}{{ p.points }}
