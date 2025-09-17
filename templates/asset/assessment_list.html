@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}진단 기록 | Much{% endblock %}
+{% block content %}
+<h3 class="mb-3">진단 기록</h3>
+<div class="table-responsive">
+<table class="table table-hover align-middle">
+  <thead>
+    <tr><th>ID</th><th>일시</th><th>등급</th><th>요약</th></tr>
+  </thead>
+  <tbody>
+  {% for it in items %}
+    <tr>
+      <td><a href="{% url 'asset:assessment_detail' it.pk %}">#{{ it.pk }}</a></td>
+      <td>{{ it.created_at|date:"Y-m-d H:i" }}</td>
+      <td><span class="badge bg-secondary">{{ it.grade|default:"-" }}</span></td>
+      <td class="text-muted">
+        {{ it.result.summary|default:"-"|truncatechars:80 }}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4">기록 없음</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}
