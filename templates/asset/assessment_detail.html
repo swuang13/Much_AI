@@ -1,0 +1,1720 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}진단 상세 | Much{% endblock %}
+{% block content %}
+<!-- Header Section -->
+<div class="assessment-header mb-5">
+  <div class="row align-items-center">
+    <div class="col-md-8">
+      <h1 class="display-5 fw-bold mb-2">
+        <i class="fas fa-chart-line text-primary me-3"></i>자산진단 결과
+      </h1>
+      <p class="lead text-muted mb-0">진단 ID: #{{ item.pk }} · {{ item.created_at|date:"Y년 m월 d일 H:i" }}</p>
+    </div>
+    <div class="col-md-4 text-md-end">
+      <div class="d-flex gap-2 justify-content-md-end">
+        <span class="badge bg-primary fs-5 px-3 py-2">등급 {{ item.grade|default:"-" }}</span>
+        <button class="btn btn-success" onclick="openChatbot()">
+          <i class="fas fa-comments me-2"></i>대화하기
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Score Gauge Section -->
+<div class="score-section mb-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="score-card text-center">
+        <div class="score-gauge-container">
+          <div id="scoreGauge" class="score-gauge"></div>
+          <div class="score-overlay">
+            <div class="score-number" id="scoreNumber">{{ item.result.score_100|default:0 }}</div>
+            <div class="score-label">종합점수</div>
+          </div>
+        </div>
+        <div class="score-description mt-4">
+          <h4 class="fw-bold" id="scoreTitle">분석 중...</h4>
+          <p class="text-muted" id="scoreSubtitle">AI가 종합적으로 분석한 신용점수입니다</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="row g-4">
+  <div class="col-lg-4">
+    <!-- Input Data Card -->
+    <div class="card shadow-lg border-0 mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0 fw-bold">
+          <i class="fas fa-database me-2"></i>입력 데이터
+        </h5>
+      </div>
+      <div class="card-body p-4">
+        <div class="input-metrics">
+          <div class="metric-item">
+            <div class="metric-icon">
+              <i class="fas fa-arrow-up text-success"></i>
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">6개월 총 수입</div>
+              <div class="metric-value">{{ item.income_6m|floatformat:0|intcomma }}원</div>
+            </div>
+          </div>
+          
+          <div class="metric-item">
+            <div class="metric-icon">
+              <i class="fas fa-arrow-down text-danger"></i>
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">6개월 총 지출</div>
+              <div class="metric-value">{{ item.expense_6m|floatformat:0|intcomma }}원</div>
+            </div>
+          </div>
+          
+          <div class="metric-item">
+            <div class="metric-icon">
+              <i class="fas fa-star text-warning"></i>
+            </div>
+            <div class="metric-content">
+              <div class="metric-label">신용점수</div>
+              <div class="metric-value">{{ item.credit_score }}점</div>
+            </div>
+          </div>
+        </div>
+        
+        {% if item.credit_info %}
+        <hr class="my-4">
+        <div class="additional-info">
+          <h6 class="fw-semibold mb-3">
+            <i class="fas fa-info-circle text-info me-2"></i>추가 정보
+          </h6>
+          <div class="info-content">{{ item.credit_info }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="col-lg-8">
+    <!-- Monthly Trend Chart -->
+    <div class="chart-card mb-4">
+      <div class="chart-header">
+        <h5 class="chart-title">
+          <i class="fas fa-chart-line me-2"></i>월별 수입/지출 추이
+        </h5>
+      </div>
+      <div class="chart-body">
+        <canvas id="mixChart"></canvas>
+      </div>
+    </div>
+
+    <!-- AI Summary -->
+    <div class="summary-card mb-4">
+      <div class="summary-header">
+        <h5 class="summary-title">
+          <i class="fas fa-robot me-2"></i>AI 종합 분석
+        </h5>
+      </div>
+      <div class="summary-body">
+        <div class="summary-content">{{ item.result.summary|default:"분석 중..."|safe }}</div>
+      </div>
+    </div>
+
+    <!-- Detailed Analysis Grid -->
+    <div class="analysis-grid mb-4">
+      <div class="analysis-item">
+        <div class="analysis-icon">
+          <i class="fas fa-heartbeat"></i>
+        </div>
+        <div class="analysis-content">
+          <h6 class="analysis-title">재무 건전성</h6>
+          <p class="analysis-text">{{ item.result.detailed_analysis.financial_health|default:"재무 건전성을 분석 중입니다." }}</p>
+        </div>
+      </div>
+      
+      <div class="analysis-item">
+        <div class="analysis-icon debt-icon">
+          <i class="fas fa-balance-scale"></i>
+        </div>
+        <div class="analysis-content">
+          <h6 class="analysis-title">부채 구조</h6>
+          <p class="analysis-text">{{ item.result.detailed_analysis.debt_structure|default:"부채 구조를 분석 중입니다." }}</p>
+        </div>
+      </div>
+      
+      <div class="analysis-item">
+        <div class="analysis-icon asset-icon">
+          <i class="fas fa-coins"></i>
+        </div>
+        <div class="analysis-content">
+          <h6 class="analysis-title">자산 배분</h6>
+          <p class="analysis-text">{{ item.result.detailed_analysis.asset_allocation|default:"자산 배분을 분석 중입니다." }}</p>
+        </div>
+      </div>
+      
+      <div class="analysis-item">
+        <div class="analysis-icon trend-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="analysis-content">
+          <h6 class="analysis-title">트렌드 분석</h6>
+          <p class="analysis-text">{{ item.result.detailed_analysis.trend_analysis|default:"트렌드를 분석 중입니다." }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Metrics Grid -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card savings">
+          <div class="metric-icon">
+            <i class="fas fa-piggy-bank"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ item.result.metrics.savings_rate_pct|default:"-" }}%</div>
+            <div class="metric-label">저축률</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card dti">
+          <div class="metric-icon">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ item.result.metrics.dti_pct|default:"-" }}%</div>
+            <div class="metric-label">DTI</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card liquidity">
+          <div class="metric-icon">
+            <i class="fas fa-tint"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ item.result.metrics.liquidity_ratio|default:"-" }}%</div>
+            <div class="metric-label">유동성 비율</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6 col-lg-3">
+        <div class="metric-card surplus">
+          <div class="metric-icon">
+            <i class="fas fa-plus-circle"></i>
+          </div>
+          <div class="metric-content">
+            <div class="metric-value">{{ item.result.metrics.monthly_surplus|default:"-"|floatformat:0|intcomma }}원</div>
+            <div class="metric-label">월 여유자금</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Risk Factors -->
+    {% if item.result.risk_factors %}
+    <div class="risk-section mb-4">
+      <div class="risk-header">
+        <h5 class="risk-title">
+          <i class="fas fa-exclamation-triangle me-2"></i>위험 요소 분석
+        </h5>
+      </div>
+      <div class="risk-body">
+        {% for risk in item.result.risk_factors %}
+          <div class="risk-item risk-{{ risk.category|lower }}">
+            <div class="risk-indicator">
+              {% if risk.category == "고위험" %}
+                <i class="fas fa-exclamation-triangle"></i>
+              {% elif risk.category == "중위험" %}
+                <i class="fas fa-exclamation-circle"></i>
+              {% else %}
+                <i class="fas fa-info-circle"></i>
+              {% endif %}
+            </div>
+            <div class="risk-content">
+              <div class="risk-category">{{ risk.category }}</div>
+              <div class="risk-description">{{ risk.description }}</div>
+              <div class="risk-impact">영향도: {{ risk.impact }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Enhanced Recommendations -->
+    <div class="recommendations-section mb-4">
+      <div class="recommendations-header">
+        <h5 class="recommendations-title">
+          <i class="fas fa-lightbulb me-2"></i>맞춤형 개선 방안
+        </h5>
+      </div>
+      <div class="recommendations-body">
+        {% if item.result.recommendations %}
+          {% for rec in item.result.recommendations %}
+            <div class="recommendation-card priority-{{ rec.priority|lower }}">
+              <div class="recommendation-header">
+                <div class="recommendation-priority">{{ rec.priority }}</div>
+                <div class="recommendation-category">{{ rec.category }}</div>
+              </div>
+              <div class="recommendation-action">{{ rec.action }}</div>
+              <div class="recommendation-benefit">
+                <i class="fas fa-arrow-up text-success me-1"></i>{{ rec.expected_benefit }}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          {% for r in item.result.recommendations %}
+            <div class="recommendation-card priority-보통">
+              <div class="recommendation-header">
+                <div class="recommendation-priority">보통</div>
+                <div class="recommendation-category">일반</div>
+              </div>
+              <div class="recommendation-action">{{ r }}</div>
+              <div class="recommendation-benefit">
+                <i class="fas fa-arrow-up text-success me-1"></i>재무 상태 개선 효과
+              </div>
+            </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Next Steps -->
+    {% if item.result.next_steps %}
+    <div class="next-steps-section">
+      <div class="next-steps-header">
+        <h5 class="next-steps-title">
+          <i class="fas fa-tasks me-2"></i>단기 실행 계획
+        </h5>
+      </div>
+      <div class="next-steps-body">
+        {% for step in item.result.next_steps %}
+          <div class="next-step-item">
+            <div class="step-number">{{ forloop.counter }}</div>
+            <div class="step-content">{{ step }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Chatbot Popup -->
+<div class="chatbot-overlay" id="chatbotOverlay">
+  <div class="chatbot-container">
+    <div class="chatbot-header">
+      <div class="chatbot-title">
+        <i class="fas fa-robot me-2"></i>AI 재무 상담
+      </div>
+      <button class="chatbot-close" onclick="closeChatbot()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="chatbot-messages" id="chatbotMessages">
+      <div class="message bot-message">
+        <div class="message-avatar">
+          <i class="fas fa-robot"></i>
+        </div>
+        <div class="message-content">
+          <div class="message-text">
+            안녕하세요! 진단 결과에 대해 궁금한 점이 있으시면 언제든 물어보세요. 
+            DTI, 저축률, 투자 방향 등 구체적인 질문을 해주시면 더 자세히 설명드릴게요! 💰
+          </div>
+          <div class="message-time">지금</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="chatbot-input">
+      <div class="input-container">
+        <input type="text" id="chatInput" placeholder="진단 결과에 대해 궁금한 점을 물어보세요..." />
+        <button id="sendButton" onclick="sendMessage()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+      <div class="quick-questions">
+        <button class="quick-btn" onclick="askQuickQuestion('DTI가 높은 이유가 뭔가요?')">DTI 개선 방법</button>
+        <button class="quick-btn" onclick="askQuickQuestion('저축률을 높이려면 어떻게 해야 하나요?')">저축률 향상</button>
+        <button class="quick-btn" onclick="askQuickQuestion('투자 포트폴리오 조언을 해주세요')">투자 조언</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Score Gauge Styles */
+.score-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  margin: 2rem 0;
+}
+
+.score-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  border: 1px solid #e9ecef;
+}
+
+.score-gauge-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.score-gauge {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: conic-gradient(#0d6efd var(--gauge), #e9ecef 0);
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  transition: all 0.5s ease;
+}
+
+.score-gauge::after {
+  content: "";
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+}
+
+.score-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 10;
+}
+
+.score-number {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #2c3e50;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.score-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.score-description h4 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+/* Input Metrics Styles */
+.input-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #1d5091;
+  transition: all 0.3s ease;
+}
+
+.metric-item:hover {
+  background: #e9ecef;
+  transform: translateX(5px);
+}
+
+.metric-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.metric-icon i {
+  font-size: 1.5rem;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Additional Info */
+.additional-info {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.info-content {
+  color: #495057;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Server Metrics */
+.server-metrics {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+}
+
+.server-metric {
+  text-align: center;
+  flex: 1;
+}
+
+.server-metric-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+}
+
+.server-metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Summary Card */
+.summary-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.summary-header {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  padding: 1.5rem 2rem;
+  color: white;
+}
+
+.summary-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.summary-body {
+  padding: 2rem;
+}
+
+.summary-content {
+  color: #374151;
+  line-height: 1.8;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Analysis Grid */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.analysis-item {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.analysis-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.analysis-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1d5091, #2c5aa0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.debt-icon { background: linear-gradient(135deg, #1d5091, #2c5aa0); }
+.asset-icon { background: linear-gradient(135deg, #1d5091, #2c5aa0); }
+.trend-icon { background: linear-gradient(135deg, #1d5091, #2c5aa0); }
+
+.analysis-content {
+  flex: 1;
+}
+
+.analysis-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.analysis-text {
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Enhanced Metric Cards */
+.metric-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+  text-align: center;
+  height: 100%;
+}
+
+.metric-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.metric-card.savings { border-left: 4px solid #1d5091; }
+.metric-card.dti { border-left: 4px solid #1d5091; }
+.metric-card.liquidity { border-left: 4px solid #1d5091; }
+.metric-card.surplus { border-left: 4px solid #1d5091; }
+
+.metric-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  color: #1d5091;
+  font-size: 1.5rem;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.metric-label {
+  font-size: 0.9rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Risk Section */
+.risk-section {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.risk-header { background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%); padding: 1.5rem 2rem; color: white; }
+
+.risk-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.risk-body {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.risk-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border-left: 4px solid;
+}
+
+.risk-item.risk-고위험 { background: rgba(29, 80, 145, 0.05); border-left-color: #1d5091; }
+.risk-item.risk-중위험 { background: rgba(29, 80, 145, 0.05); border-left-color: #1d5091; }
+.risk-item.risk-저위험 { background: rgba(29, 80, 145, 0.05); border-left-color: #1d5091; }
+
+.risk-indicator {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+
+.risk-category {
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.risk-description {
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.risk-impact {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Recommendations Section */
+.recommendations-section {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.recommendations-header {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  padding: 1.5rem 2rem;
+  color: white;
+}
+
+.recommendations-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.recommendations-body {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.recommendation-card {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border-left: 4px solid;
+  transition: all 0.3s ease;
+}
+
+.recommendation-card:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.recommendation-card.priority-높음 { border-left-color: #1d5091; background: rgba(29, 80, 145, 0.03); }
+.recommendation-card.priority-보통 { border-left-color: #1d5091; background: rgba(29, 80, 145, 0.03); }
+.recommendation-card.priority-낮음 { border-left-color: #1d5091; background: rgba(29, 80, 145, 0.03); }
+
+.recommendation-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.recommendation-priority {
+  background: #1d5091;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.recommendation-category {
+  background: #e2e8f0;
+  color: #374151;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.recommendation-action {
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
+
+.recommendation-benefit {
+  color: #059669;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* Next Steps Section */
+.next-steps-section {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.next-steps-header { background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%); padding: 1.5rem 2rem; color: white; }
+
+.next-steps-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.next-steps-body {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.next-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid #1d5091;
+}
+
+.step-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #1d5091;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.step-content {
+  color: #374151;
+  line-height: 1.6;
+  flex: 1;
+  font-weight: 500;
+}
+
+/* Analysis Metrics */
+.analysis-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.analysis-metric:last-child {
+  border-bottom: none;
+}
+
+.analysis-metric-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.analysis-metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Alert List */
+.alert-list {
+  list-style: none;
+  padding: 0;
+}
+
+.alert-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  color: #495057;
+  line-height: 1.5;
+}
+
+.alert-item:last-child {
+  border-bottom: none;
+}
+
+/* Recommendations */
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border-left: 4px solid #0d6efd;
+}
+
+.recommendation-number {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0d6efd;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.recommendation-content {
+  color: #495057;
+  line-height: 1.6;
+  flex: 1;
+}
+
+/* Chart Card Styling */
+.chart-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.chart-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+}
+
+.chart-header {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  padding: 2rem;
+  color: white;
+}
+
+.chart-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.chart-body {
+  padding: 2rem;
+  height: 500px; /* 대폭 증가된 차트 높이 */
+  position: relative;
+}
+
+/* Card Styling */
+.card {
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1) !important;
+}
+
+.card-header {
+  border: none;
+  padding: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.card-body {
+  padding: 1.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .score-gauge {
+    width: 220px;
+    height: 220px;
+  }
+  
+  .score-number {
+    font-size: 3rem;
+  }
+  
+  .metric-item {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .metric-icon {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+  
+  .server-metrics {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .recommendation-item {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.score-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.metric-item {
+  animation: fadeInUp 0.6s ease-out;
+  animation-fill-mode: both;
+}
+
+.metric-item:nth-child(1) { animation-delay: 0.1s; }
+.metric-item:nth-child(2) { animation-delay: 0.2s; }
+.metric-item:nth-child(3) { animation-delay: 0.3s; }
+
+/* Chatbot Styles */
+.chatbot-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.chatbot-overlay.active {
+  display: flex;
+}
+
+.chatbot-container {
+  width: 90%;
+  max-width: 500px;
+  height: 80vh;
+  max-height: 700px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+.chatbot-header {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  padding: 1.5rem;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatbot-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.chatbot-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.chatbot-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.chatbot-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message {
+  display: flex;
+  gap: 0.75rem;
+  animation: messageSlide 0.3s ease;
+}
+
+.user-message {
+  flex-direction: row-reverse;
+}
+
+.message-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.bot-message .message-avatar {
+  background: linear-gradient(135deg, #1d5091, #2c5aa0);
+}
+
+.user-message .message-avatar {
+  background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.message-content {
+  max-width: 80%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.user-message .message-content {
+  align-items: flex-end;
+}
+
+.message-text {
+  background: white;
+  padding: 1rem 1.25rem;
+  border-radius: 16px;
+  color: #374151;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  word-wrap: break-word;
+}
+
+.user-message .message-text {
+  background: #1d5091;
+  color: white;
+}
+
+.message-time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  padding: 0 0.5rem;
+}
+
+.chatbot-input {
+  background: white;
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.input-container {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+#chatInput {
+  flex: 1;
+  border: 2px solid #e5e7eb;
+  border-radius: 25px;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+#chatInput:focus {
+  border-color: #1d5091;
+}
+
+#sendButton {
+  background: linear-gradient(135deg, #1d5091, #2c5aa0);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+#sendButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(29, 80, 145, 0.3);
+}
+
+#sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.quick-questions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.quick-btn {
+  background: #f1f5f9;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quick-btn:hover {
+  background: #1d5091;
+  color: white;
+  border-color: #1d5091;
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-style: italic;
+  padding: 1rem 1.25rem;
+}
+
+.typing-dots {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6b7280;
+  animation: typingDot 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { 
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes messageSlide {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes typingDot {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-10px); }
+}
+
+/* Responsive Chatbot */
+@media (max-width: 768px) {
+  .chatbot-container {
+    width: 95%;
+    height: 85vh;
+  }
+  
+  .quick-questions {
+    flex-direction: column;
+  }
+  
+  .quick-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function(){
+  const score = {{ item.result.score_100|default:0 }};
+  const pct = Math.max(0, Math.min(100, Math.round(score)));
+  
+  // Score Gauge Animation
+  const gauge = document.getElementById('scoreGauge');
+  const scoreNumber = document.getElementById('scoreNumber');
+  const scoreTitle = document.getElementById('scoreTitle');
+  const scoreSubtitle = document.getElementById('scoreSubtitle');
+  
+  // Color calculation based on score ranges
+  let color;
+  if (pct <= 35) {
+    color = '#dc3545'; // 빨간색 (0~35점)
+  } else if (pct <= 60) {
+    color = '#ffc107'; // 노란색 (35~60점)
+  } else {
+    color = '#1d5091'; // 파란색 (60점 이상)
+  }
+  
+  // Animate gauge
+  setTimeout(() => {
+    gauge.style.setProperty('--gauge', pct+'%');
+    gauge.style.background = `conic-gradient(${color} ${pct}%, #e9ecef 0)`;
+    
+    // Animate score number
+    let currentScore = 0;
+    const increment = pct / 50; // 50 steps
+    const timer = setInterval(() => {
+      currentScore += increment;
+      if (currentScore >= pct) {
+        currentScore = pct;
+        clearInterval(timer);
+      }
+      scoreNumber.textContent = Math.round(currentScore);
+    }, 30);
+    
+    // Update title and subtitle based on score
+    if (pct >= 60) {
+      scoreTitle.textContent = "우수한 신용상태";
+      scoreSubtitle.textContent = "매우 안정적인 자산 관리 상태입니다";
+    } else if (pct >= 35) {
+      scoreTitle.textContent = "주의가 필요한 상태";
+      scoreSubtitle.textContent = "자산 관리 개선이 필요한 상태입니다";
+    } else {
+      scoreTitle.textContent = "위험한 신용상태";
+      scoreSubtitle.textContent = "즉시 자산 관리 개선이 시급한 상태입니다";
+    }
+  }, 500);
+
+  // Chart Data
+  const incArr = {{ item.user.asset_profile.income_monthly|default:'[]'|safe }};
+  const expArr = {{ item.user.asset_profile.expense_monthly|default:'[]'|safe }};
+  const monthLabels = ["5개월 전","4개월 전","3개월 전","2개월 전","1개월 전","이번 달"];
+  const incomeData = (incArr.length===6?incArr:[0,0,0,0,0,0]);
+  const expenseData = (expArr.length===6?expArr:[0,0,0,0,0,0]);
+  const maxVal = Math.max(100, ...incomeData, ...expenseData);
+  const yMax = Math.ceil(maxVal/100)*100 + 100; // 100단위 반올림 상향 + 여유
+
+  // Chart.js Configuration
+  const ctx = document.getElementById('mixChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: monthLabels,
+      datasets: [
+        { 
+          label: '수입(만원)', 
+          data: incomeData, 
+          borderColor: '#1d5091', 
+          backgroundColor: 'rgba(29, 80, 145, 0.15)', 
+          tension: 0.3, 
+          fill: true,
+          borderWidth: 4,
+          pointBackgroundColor: '#1d5091',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 3,
+          pointRadius: 8,
+          pointHoverRadius: 12,
+          pointHoverBackgroundColor: '#1d5091',
+          pointHoverBorderColor: '#ffffff',
+          pointHoverBorderWidth: 4
+        },
+        { 
+          label: '지출(만원)', 
+          data: expenseData, 
+          borderColor: '#dc3545', 
+          backgroundColor: 'rgba(220, 53, 69, 0.15)', 
+          tension: 0.3, 
+          fill: true,
+          borderWidth: 4,
+          pointBackgroundColor: '#dc3545',
+          pointBorderColor: '#ffffff',
+          pointBorderWidth: 3,
+          pointRadius: 8,
+          pointHoverRadius: 12,
+          pointHoverBackgroundColor: '#dc3545',
+          pointHoverBorderColor: '#ffffff',
+          pointHoverBorderWidth: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { 
+        legend: { 
+          position: 'top',
+          align: 'end',
+          labels: {
+            usePointStyle: true,
+            padding: 30,
+            font: {
+              size: 16,
+              weight: '700',
+              family: "'Noto Sans KR', sans-serif"
+            },
+            boxWidth: 20,
+            boxHeight: 20
+          }
+        } 
+      },
+      scales: {
+        y: {
+          title: { 
+            display: true, 
+            text: '금액 (만원)',
+            font: {
+              size: 16,
+              weight: '700',
+              family: "'Noto Sans KR', sans-serif"
+            },
+            color: '#374151'
+          },
+          beginAtZero: true,
+          suggestedMax: yMax,
+          ticks: { 
+            stepSize: 100, 
+            callback: v => v.toLocaleString() + '만원',
+            font: {
+              size: 14,
+              weight: '600',
+              family: "'Noto Sans KR', sans-serif"
+            },
+            color: '#6b7280',
+            padding: 15
+          },
+          grid: {
+            color: 'rgba(0,0,0,0.08)',
+            drawBorder: false,
+            lineWidth: 1
+          }
+        },
+        x: {
+          ticks: {
+            font: {
+              size: 14,
+              weight: '600',
+              family: "'Noto Sans KR', sans-serif"
+            },
+            color: '#6b7280',
+            padding: 15
+          },
+          grid: {
+            display: false
+          }
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      animation: {
+        duration: 2500,
+        easing: 'easeInOutQuart',
+        delay: (context) => {
+          let delay = 0;
+          if (context.type === 'data' && context.mode === 'default') {
+            delay = context.dataIndex * 200 + context.datasetIndex * 100;
+          }
+          return delay;
+        }
+      },
+      elements: {
+        line: {
+          borderJoinStyle: 'round',
+          borderCapStyle: 'round'
+        }
+      }
+    }
+  });
+})();
+
+// CSRF Token Helper
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+// Chatbot Functionality
+const assessmentData = {
+  id: {{ item.pk }},
+  grade: "{{ item.grade|default:'-' }}",
+  score: {{ item.result.score_100|default:0 }},
+  summary: `{{ item.result.summary|default:"분석 없음"|escapejs }}`,
+  income: {{ item.income_6m|default:0 }},
+  expense: {{ item.expense_6m|default:0 }},
+  credit_score: {{ item.credit_score|default:0 }},
+  savings_rate: {{ item.result.metrics.savings_rate_pct|default:0 }},
+  dti: {{ item.result.metrics.dti_pct|default:0 }}
+};
+
+function openChatbot() {
+  document.getElementById('chatbotOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeChatbot() {
+  document.getElementById('chatbotOverlay').classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+function renderMarkdown(md) {
+  // 아주 경량 마크다운(**굵게**, *기울임*, 줄바꿈, 번호/불릿)
+  let html = md
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1<\/strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1<\/em>')
+    .replace(/\n\n/g, '<br/><br/>')
+    .replace(/\n- /g, '<br/>• ')
+    .replace(/\n\d+\. /g, match => '<br/>' + match.trim() + ' ');
+  return html;
+}
+
+function addMessage(text, isUser = false) {
+  const messagesContainer = document.getElementById('chatbotMessages');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+  
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  
+  const rendered = isUser ? text : renderMarkdown(text);
+  messageDiv.innerHTML = `
+    <div class="message-avatar">
+      <i class="fas fa-${isUser ? 'user' : 'robot'}"></i>
+    </div>
+    <div class="message-content">
+      <div class="message-text">${rendered}</div>
+      <div class="message-time">${timeStr}</div>
+    </div>
+  `;
+  
+  messagesContainer.appendChild(messageDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+function showTyping() {
+  const messagesContainer = document.getElementById('chatbotMessages');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'message bot-message typing-message';
+  typingDiv.innerHTML = `
+    <div class="message-avatar">
+      <i class="fas fa-robot"></i>
+    </div>
+    <div class="message-content">
+      <div class="typing-indicator">
+        <span>AI가 답변 중</span>
+        <div class="typing-dots">
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+          <div class="typing-dot"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  messagesContainer.appendChild(typingDiv);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  return typingDiv;
+}
+
+function removeTyping(typingElement) {
+  if (typingElement && typingElement.parentNode) {
+    typingElement.parentNode.removeChild(typingElement);
+  }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const sendButton = document.getElementById('sendButton');
+  const message = input.value.trim();
+  
+  if (!message) return;
+  
+  // Add user message
+  addMessage(message, true);
+  input.value = '';
+  sendButton.disabled = true;
+  
+  // Show typing indicator
+  const typingElement = showTyping();
+  
+  try {
+    // CSRF 토큰 가져오기
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content') ||
+                     getCookie('csrftoken');
+    
+    const response = await fetch('{% url "asset:chat" item.pk %}', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({
+        message: message,
+        assessment_data: assessmentData
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Remove typing indicator
+    removeTyping(typingElement);
+    
+    if (data.success) {
+      addMessage(data.response);
+    } else {
+      addMessage(`오류: ${data.error || '일시적인 오류가 발생했습니다.'}`);
+      console.error('Chat API Error:', data);
+    }
+  } catch (error) {
+    removeTyping(typingElement);
+    console.error('Chat Error:', error);
+    
+    if (error.message.includes('403')) {
+      addMessage('인증 오류가 발생했습니다. 페이지를 새로고침해주세요.');
+    } else if (error.message.includes('404')) {
+      addMessage('채팅 서비스를 찾을 수 없습니다. 관리자에게 문의해주세요.');
+    } else if (error.message.includes('500')) {
+      addMessage('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } else {
+      addMessage(`연결 오류: ${error.message}`);
+    }
+  }
+  
+  sendButton.disabled = false;
+}
+
+function askQuickQuestion(question) {
+  document.getElementById('chatInput').value = question;
+  sendMessage();
+}
+
+// Enter key support
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    sendMessage();
+  }
+});
+
+// Close chatbot on overlay click
+document.getElementById('chatbotOverlay').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeChatbot();
+  }
+});
+</script>
+{% endblock %}

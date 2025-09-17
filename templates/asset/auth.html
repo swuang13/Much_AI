@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}로그인 | Much{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-6">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h1 class="auth-title">
+              <i class="fas fa-shield-alt me-3"></i>Much AI
+            </h1>
+            <p class="auth-subtitle">AI 기반 자산진단 서비스에 오신 것을 환영합니다</p>
+          </div>
+
+          <div class="auth-tabs">
+            <button class="auth-tab active" data-tab="login">
+              <i class="fas fa-sign-in-alt me-2"></i>로그인
+            </button>
+            <button class="auth-tab" data-tab="register">
+              <i class="fas fa-user-plus me-2"></i>회원가입
+            </button>
+          </div>
+
+          <!-- Login Form -->
+          <div class="auth-form active" id="login-form">
+            <form method="post" action="{% url 'asset:login' %}">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-user me-2"></i>아이디
+                </label>
+                <input type="text" name="username" class="form-control" placeholder="아이디를 입력하세요" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-lock me-2"></i>비밀번호
+                </label>
+                <input type="password" name="password" class="form-control" placeholder="비밀번호를 입력하세요" required>
+              </div>
+              
+              <button type="submit" class="btn-auth">
+                <i class="fas fa-sign-in-alt me-2"></i>로그인
+              </button>
+            </form>
+          </div>
+
+          <!-- Register Form -->
+          <div class="auth-form" id="register-form">
+            <form method="post" action="{% url 'asset:register' %}">
+              {% csrf_token %}
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-user me-2"></i>아이디
+                </label>
+                <input type="text" name="username" class="form-control" placeholder="아이디를 입력하세요" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-envelope me-2"></i>이메일
+                </label>
+                <input type="email" name="email" class="form-control" placeholder="이메일을 입력하세요" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-lock me-2"></i>비밀번호
+                </label>
+                <input type="password" name="password1" class="form-control" placeholder="비밀번호를 입력하세요" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-lock me-2"></i>비밀번호 확인
+                </label>
+                <input type="password" name="password2" class="form-control" placeholder="비밀번호를 다시 입력하세요" required>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">
+                  <i class="fas fa-id-card me-2"></i>이름
+                </label>
+                <input type="text" name="first_name" class="form-control" placeholder="이름을 입력하세요" required>
+              </div>
+              
+              <button type="submit" class="btn-auth">
+                <i class="fas fa-user-plus me-2"></i>회원가입
+              </button>
+            </form>
+          </div>
+
+          <div class="auth-footer">
+            <p class="text-muted">
+              <i class="fas fa-info-circle me-2"></i>
+              회원가입 시 마이데이터 연동을 통해 자산 정보가 자동으로 생성됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Global Typography */
+body {
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  min-height: 100vh;
+}
+
+/* Auth Container */
+.auth-container {
+  padding: 4rem 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+/* Auth Card */
+.auth-card {
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+/* Auth Header */
+.auth-header {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  padding: 3rem 2rem;
+  text-align: center;
+  color: white;
+}
+
+.auth-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.auth-subtitle {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Auth Tabs */
+.auth-tabs {
+  display: flex;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 1.5rem;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.auth-tab.active {
+  background: white;
+  color: #1d5091;
+  border-bottom: 3px solid #1d5091;
+}
+
+.auth-tab:hover:not(.active) {
+  background: #f1f5f9;
+  color: #1d5091;
+}
+
+/* Auth Forms */
+.auth-form {
+  display: none;
+  padding: 3rem 2rem;
+}
+
+.auth-form.active {
+  display: block;
+}
+
+.form-group {
+  margin-bottom: 2rem;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #f9fafb;
+}
+
+.form-control:focus {
+  border-color: #1d5091;
+  box-shadow: 0 0 0 3px rgba(29, 80, 145, 0.1);
+  background: white;
+  outline: none;
+}
+
+.form-control::placeholder {
+  color: #9ca3af;
+}
+
+/* Auth Button */
+.btn-auth {
+  width: 100%;
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  color: white;
+  border: none;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(29, 80, 145, 0.3);
+  cursor: pointer;
+}
+
+.btn-auth:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(29, 80, 145, 0.4);
+  color: white;
+}
+
+/* Auth Footer */
+.auth-footer {
+  padding: 2rem;
+  background: #f8fafc;
+  text-align: center;
+  border-top: 1px solid #e2e8f0;
+}
+
+.auth-footer p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6b7280;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 2rem 1rem;
+  }
+  
+  .auth-header {
+    padding: 2rem 1.5rem;
+  }
+  
+  .auth-title {
+    font-size: 2rem;
+  }
+  
+  .auth-form {
+    padding: 2rem 1.5rem;
+  }
+  
+  .auth-tab {
+    padding: 1rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .auth-header {
+    padding: 1.5rem 1rem;
+  }
+  
+  .auth-title {
+    font-size: 1.75rem;
+  }
+  
+  .auth-form {
+    padding: 1.5rem 1rem;
+  }
+}
+</style>
+
+<script>
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', function() {
+  const tabs = document.querySelectorAll('.auth-tab');
+  const forms = document.querySelectorAll('.auth-form');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      const targetTab = this.getAttribute('data-tab');
+      
+      // Remove active class from all tabs and forms
+      tabs.forEach(t => t.classList.remove('active'));
+      forms.forEach(f => f.classList.remove('active'));
+      
+      // Add active class to clicked tab and corresponding form
+      this.classList.add('active');
+      document.getElementById(targetTab + '-form').classList.add('active');
+    });
+  });
+});
+</script>
+{% endblock %}
+
+

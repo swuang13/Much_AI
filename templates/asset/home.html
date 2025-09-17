@@ -1,166 +1,617 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
 
-{% block title %}자산 관리 역량 진단 - Much{% endblock %}
+{% block title %}자산진단 | Much{% endblock %}
 
 {% block content %}
-<div class="container">
-    <!-- 헤더 섹션 -->
-    <div class="row mb-5">
-        <div class="col-12 text-center">
-            <h1 class="display-4 fw-bold text-primary mb-3">
-                <i class="fas fa-chart-line me-3"></i>자산 관리 역량 진단
-            </h1>
-            <p class="lead text-muted">
-                AI가 코칭하는 Much와 함께 현재 자산 관리 역량을 진단하고 맞춤형 피드백을 받아보세요
-            </p>
+<!-- User Status Bar -->
+{% if user.is_authenticated %}
+<div class="user-status-bar mb-4">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="user-info">
+          <i class="fas fa-user-circle me-2"></i>
+          <span class="fw-semibold">{{ user.first_name|default:user.username }}님, 환영합니다!</span>
+          <span class="text-muted ms-2">마이데이터가 연동되어 있습니다.</span>
         </div>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="{% url 'asset:logout' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-sign-out-alt me-1"></i>로그아웃
+        </a>
+      </div>
     </div>
-
-    <!-- 진단 유형 선택 -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-clipboard-list me-2"></i>진단 유형 선택
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-primary">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-star text-primary fa-3x mb-3"></i>
-                                    <h5 class="card-title">기본 진단</h5>
-                                    <p class="card-text">자산 관리의 기본 역량을 체크하는 간단한 진단</p>
-                                    <p class="text-muted small">소요시간: 약 10분</p>
-                                    <a href="{% url 'asset:start_assessment' %}" class="btn btn-primary">
-                                        시작하기
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-warning">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-chart-bar text-warning fa-3x mb-3"></i>
-                                    <h5 class="card-title">심화 진단</h5>
-                                    <p class="card-text">더 상세한 분석을 통한 종합적인 역량 진단</p>
-                                    <p class="text-muted small">소요시간: 약 20분</p>
-                                    <a href="{% url 'asset:start_assessment' %}" class="btn btn-warning">
-                                        시작하기
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-success">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-trophy text-success fa-3x mb-3"></i>
-                                    <h5 class="card-title">종합 진단</h5>
-                                    <p class="card-text">전문가 수준의 상세한 분석과 맞춤형 솔루션</p>
-                                    <p class="text-muted small">소요시간: 약 30분</p>
-                                    <a href="{% url 'asset:start_assessment' %}" class="btn btn-success">
-                                        시작하기
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 진단 영역 소개 -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-info-circle me-2"></i>진단 영역 안내
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-start">
-                                <div class="bg-primary text-white rounded-circle p-3 me-3">
-                                    <i class="fas fa-book fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h5>금융 리터러시</h5>
-                                    <p class="text-muted">금융 상품 이해도, 경제 지식, 금융 시장 인식</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-start">
-                                <div class="bg-warning text-white rounded-circle p-3 me-3">
-                                    <i class="fas fa-shield-alt fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h5>위험 관리</h5>
-                                    <p class="text-muted">보험 활용, 비상금 관리, 위험 분산 전략</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-start">
-                                <div class="bg-success text-white rounded-circle p-3 me-3">
-                                <i class="fas fa-chart-line fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h5>투자 지식</h5>
-                                    <p class="text-muted">투자 상품 이해, 포트폴리오 구성, 수익률 관리</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="d-flex align-items-start">
-                                <div class="bg-info text-white rounded-circle p-3 me-3">
-                                    <i class="fas fa-credit-card fa-lg"></i>
-                                </div>
-                                <div>
-                                    <h5>부채 관리</h5>
-                                    <p class="text-muted">신용 관리, 대출 상환, 부채 비율 조절</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 진단 기록 보기 -->
-    {% if user.is_authenticated %}
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-history me-2"></i>진단 기록
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted">이전 진단 결과를 확인하고 진행 상황을 파악해보세요.</p>
-                    <a href="{% url 'asset:assessment_list' %}" class="btn btn-outline-primary">
-                        <i class="fas fa-list me-2"></i>진단 기록 보기
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- 시작하기 버튼 -->
-    <div class="row">
-        <div class="col-12 text-center">
-            <a href="{% url 'asset:start_assessment' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-play me-2"></i>진단 시작하기
-            </a>
-        </div>
-    </div>
+  </div>
 </div>
+{% endif %}
+
+<!-- Hero Section -->
+<div class="hero-section mb-5">
+  <div class="hero-container">
+    <div class="container">
+      <div class="row align-items-center min-vh-35">
+        <div class="col-lg-8">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              <i class="fas fa-chart-line me-3"></i>AI 기반 자산진단
+            </h1>
+            <p class="hero-subtitle">
+              마이데이터 연동으로 정확한 자산 현황을 파악하고,<br>
+              AI가 분석한 맞춤형 신용점수 진단을 받아보세요.
+            </p>
+            <div class="hero-buttons">
+              {% if user.is_authenticated %}
+                <form method="post" action="{% url 'asset:assess_mydata' %}" class="d-inline">
+                  {% csrf_token %}
+                  <button class="btn btn-hero-primary">
+                    <i class="fas fa-database me-2"></i>마이데이터 진단
+                  </button>
+                </form>
+                <form method="post" action="{% url 'asset:demo_login' %}" class="d-inline">
+                  {% csrf_token %}
+                  <button class="btn btn-hero-secondary">
+                    <i class="fas fa-user-circle me-2"></i>데모 계정
+                  </button>
+                </form>
+              {% else %}
+                <a href="{% url 'asset:auth_page' %}" class="btn btn-hero-primary">
+                  <i class="fas fa-sign-in-alt me-2"></i>로그인하기
+                </a>
+                <a href="{% url 'asset:auth_page' %}" class="btn btn-hero-secondary">
+                  <i class="fas fa-user-plus me-2"></i>회원가입
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="hero-visual">
+            <div class="hero-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features Section -->
+<div class="features-section mb-5">
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="feature-card text-center p-4 h-100">
+        <div class="feature-icon mb-3">
+          <i class="fas fa-database" style="font-size: 3rem; color: #1d5091;"></i>
+        </div>
+        <h4 class="fw-bold mb-3">마이데이터 연동</h4>
+        <p class="text-muted">
+          은행, 카드사, 보험사 등 모든 금융기관의 데이터를 
+          안전하게 통합하여 정확한 자산 현황을 파악합니다.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card text-center p-4 h-100">
+        <div class="feature-icon mb-3">
+          <i class="fas fa-brain" style="font-size: 3rem; color: #1d5091;"></i>
+        </div>
+        <h4 class="fw-bold mb-3">AI 분석 엔진</h4>
+        <p class="text-muted">
+          최신 AI 기술로 수입, 지출, 대출 현황을 종합 분석하여
+          개인 맞춤형 신용점수와 개선 방안을 제시합니다.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="feature-card text-center p-4 h-100">
+        <div class="feature-icon mb-3">
+          <i class="fas fa-chart-pie" style="font-size: 3rem; color: #1d5091;"></i>
+        </div>
+        <h4 class="fw-bold mb-3">시각적 대시보드</h4>
+        <p class="text-muted">
+          월별 수입/지출 추이와 신용점수를 직관적인 차트로
+          확인하고, 실시간으로 자산 상태를 모니터링하세요.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content-section">
+  <div class="container">
+<div class="row g-4">
+  <div class="col-lg-7">
+        <div class="form-card">
+          <div class="form-card-header">
+            <h5 class="form-card-title">
+              <i class="fas fa-edit me-2"></i>수동 자산 진단
+            </h5>
+          </div>
+          <div class="form-card-body">
+            <p class="form-description">
+              마이데이터 연동이 어려운 경우, 직접 입력하여 진단받을 수 있습니다.
+            </p>
+            <form method="post" action="{% url 'asset:assess' %}" class="assessment-form">
+          {% csrf_token %}
+              <div class="form-group">
+            <label class="form-label">{{ form.credit_info.label }}</label>
+            {{ form.credit_info }}
+                <div class="form-help">예) 신용카드 2장, 현금서비스 없음, 자동차할부 잔액 800만원 등</div>
+          </div>
+              <button class="btn btn-form-submit">
+                <i class="fa-solid fa-magnifying-glass-chart me-2"></i> AI 진단 시작하기
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+        <div class="history-card">
+          <div class="history-card-header">
+            <h5 class="history-card-title">
+              <i class="fas fa-history me-2"></i>최근 진단 기록
+            </h5>
+          </div>
+          <div class="history-card-body">
+            <div class="history-list">
+        {% for it in latest %}
+                <a class="history-item" href="{% url 'asset:assessment_detail' it.pk %}">
+                  <div class="history-item-content">
+                    <div class="history-item-header">
+                      <span class="history-item-id">#{{ it.pk }}</span>
+                      <span class="history-item-date">{{ it.created_at|date:"Y-m-d H:i" }}</span>
+                    </div>
+                    <div class="history-item-description">{{ it.credit_info|truncatechars:60 }}</div>
+            </div>
+                  <span class="history-item-badge">{{ it.grade|default:"-" }}</span>
+          </a>
+        {% empty %}
+                <div class="history-empty">
+                  <i class="fas fa-inbox"></i>
+                  <div class="history-empty-text">아직 진단 기록이 없습니다.</div>
+                </div>
+        {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap');
+
+/* Global Typography */
+body {
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+}
+
+/* User Status Bar */
+.user-status-bar {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 1rem 0;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+}
+
+.user-info i {
+  font-size: 1.2rem;
+  color: #1d5091;
+}
+
+/* Hero Section */
+.hero-section {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 50%, #3b6bb0 100%);
+  border-radius: 24px;
+  overflow: hidden;
+  margin: 2rem 0;
+  box-shadow: 0 20px 40px rgba(29, 80, 145, 0.3);
+}
+
+.hero-container {
+  padding: 3rem 3rem;
+}
+
+.min-vh-35 {
+  min-height: 35vh;
+}
+
+.hero-content {
+  padding: 1.5rem 0;
+  max-width: 100%;
+}
+
+.hero-title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.hero-subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-hero-primary {
+  background: white;
+  color: #1d5091;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  text-decoration: none;
+}
+
+.btn-hero-primary:hover {
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  color: #1d5091;
+  text-decoration: none;
+}
+
+.btn-hero-secondary {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-hero-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  color: white;
+  text-decoration: none;
+}
+
+.hero-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.hero-icon {
+  font-size: 8rem;
+  color: rgba(255, 255, 255, 0.2);
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+/* Features Section */
+.features-section {
+  padding: 3rem 0;
+}
+
+.feature-card {
+  background: white;
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  border: 1px solid #f1f5f9;
+  height: 100%;
+}
+
+.feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+
+.feature-icon {
+  margin-bottom: 1.5rem;
+}
+
+.feature-card h4 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.feature-card p {
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Main Content Section */
+.main-content-section {
+  padding: 3rem 0;
+  background: #f8fafc;
+  border-radius: 24px;
+  margin: 2rem 0;
+}
+
+/* Form Card */
+.form-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.form-card-header {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  padding: 2rem;
+  color: white;
+}
+
+.form-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.form-card-body {
+  padding: 2.5rem;
+}
+
+.form-description {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.assessment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 1.1rem;
+}
+
+.form-control {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #f9fafb;
+}
+
+.form-control:focus {
+  border-color: #1d5091;
+  box-shadow: 0 0 0 3px rgba(29, 80, 145, 0.1);
+  background: white;
+  outline: none;
+}
+
+.form-help {
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.btn-form-submit {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  color: white;
+  border: none;
+  padding: 1.25rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(29, 80, 145, 0.3);
+}
+
+.btn-form-submit:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(29, 80, 145, 0.4);
+  color: white;
+}
+
+/* History Card */
+.history-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  height: 100%;
+}
+
+.history-card-header {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  padding: 2rem;
+  color: white;
+}
+
+.history-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.history-card-body {
+  padding: 0;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #f1f5f9;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
+}
+
+.history-item:hover {
+  background: #f8fafc;
+  text-decoration: none;
+  color: inherit;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item-content {
+  flex: 1;
+}
+
+.history-item-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.history-item-id {
+  font-weight: 600;
+  color: #1d5091;
+}
+
+.history-item-date {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.history-item-description {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.history-item-badge {
+  background: #1d5091;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.history-empty {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #9ca3af;
+}
+
+.history-empty i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.history-empty-text {
+  font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.5rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .hero-buttons {
+    flex-direction: column;
+  }
+  
+  .btn-hero-primary,
+  .btn-hero-secondary {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .hero-container {
+    padding: 2rem 2rem;
+  }
+  
+  .form-card-body,
+  .history-card-header {
+    padding: 1.5rem;
+  }
+  
+  .feature-card {
+    margin-bottom: 2rem;
+  }
+  
+  .main-content-section {
+    margin: 1rem 0;
+    padding: 2rem 0;
+  }
+}
+
+@media (max-width: 576px) {
+  .hero-title {
+    font-size: 2rem;
+  }
+  
+  .hero-icon {
+    font-size: 5rem;
+  }
+  
+  .hero-container {
+    padding: 1.5rem 1.5rem;
+  }
+  
+  .form-card-body {
+    padding: 1.25rem;
+  }
+  
+  .history-item {
+    padding: 1rem 1.25rem;
+  }
+}
+</style>
 {% endblock %}
