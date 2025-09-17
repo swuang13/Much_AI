@@ -3,208 +3,72 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.exceptions import FieldError
 from django.utils import timezone
-from django.db.models import F, Q, Sum, Count, Value, CharField, DateTimeField
-from django.db.models.functions import TruncDate, Coalesce, NullIf, Concat, Cast
+from django.db.models import Q
 import json
 from datetime import date, timedelta
 
 from .models import (
     UserProfile, PointHistory, LevelUpHistory, Quiz, QuizQuestion, 
     QuizOption, QuizAttempt, FinancialBenefit, UserBenefit, 
-    Achievement, UserAchievement, QuizAnswer
+    Achievement, UserAchievement
 )
 
 def reward_home(request):
     """리워드 시스템 메인 페이지"""
     return render(request, 'reward/reward_home.html')
 
-def _points_qs_for(profile, user):
-    """PointHistory가 user_profile FK인지 user FK인지에 따라 안전하게 필터."""
-    try:
-        return PointHistory.objects.filter(user_profile=profile)
-    except FieldError:
-        return PointHistory.objects.filter(user=user)
-
-def _ua_qs_for(profile):
-    try:
-        return UserAchievement.objects.filter(user_profile=profile)
-    except FieldError:
-        # 다른 스키마일 경우 여기에 맞게 보완
-        return UserAchievement.objects.none()
-
-def _lu_qs_for(profile):
-    try:
-        return LevelUpHistory.objects.filter(user_profile=profile)
-    except FieldError:
-        return LevelUpHistory.objects.none()
-
-def _benefit_user_qs(user, profile=None):
-    """UserBenefit: user 우선, 없으면 user_profile도 시도"""
-    try:
-        return UserBenefit.objects.filter(user=user).select_related('benefit')
-    except FieldError:
-        if profile is not None:
-            try:
-                return UserBenefit.objects.filter(user_profile=profile).select_related('benefit')
-            except FieldError:
-                pass
-        return UserBenefit.objects.none()
-    
-def _attempts_qs_for(profile, user):
-    """QuizAttempt: user_profile 또는 user 스키마 모두 대응"""
-    try:
-        return QuizAttempt.objects.filter(user_profile=profile)
-    except FieldError:
-        return QuizAttempt.objects.filter(user=user)
-
-def _answers_qs_for(profile, user):
-    """
-    QuizAnswer: 직접 user 필드가 없으므로 attempt FK를 따라가서 필터링.
-    스키마가 user_profile 기반이면 attempt__user_profile,
-    user 기반이면 attempt__user 로 자동 대응.
-    """
-    try:
-        # 가장 흔한 스키마: QuizAttempt(user_profile=...)
-        return QuizAnswer.objects.filter(attempt__user_profile=profile)
-    except FieldError:
-        # 다른 스키마: QuizAttempt(user=...)
-        return QuizAnswer.objects.filter(attempt__user=user)
-
-
 @login_required
-def dashboard(request):
-    user = request.user
-    tznow = timezone.now()
-    profile, _ = UserProfile.objects.get_or_create(user=user)
-
-    # ---- PointHistory의 시간 필드 동적 탐색 → when/when_date 생성 ----
-    # 실제 필드만 대상으로(리버스 릴레이션 제외)
-    ph_fields = {f.name for f in PointHistory._meta.fields}
-    time_candidates = ['created_at', 'activated_at', 'created', 'timestamp']
-    when_sources = [F(n) for n in time_candidates if n in ph_fields]
-
-    if len(when_sources) >= 2:
-        when_expr = Coalesce(*when_sources, output_field=DateTimeField())
-    elif len(when_sources) == 1:
-        when_expr = when_sources[0]
-    else:
-        when_expr = Value(tznow, output_field=DateTimeField())
-
-    # 공통 베이스 쿼리: when(정렬용), when_date(집계/필터용)
-    points_base = (
-        _points_qs_for(profile, user)
-        .annotate(
-            when=when_expr,
-            when_date=TruncDate(when_expr),
-        )
-    )
-
-    # ==== 최근 내역 ====
-    recent_points       = points_base.order_by('-when')[:10]
-    recent_achievements = _ua_qs_for(profile).order_by('-earned_at')[:5]
-    recent_level_ups    = _lu_qs_for(profile).order_by('-created_at')[:5]
-
-    # ==== 사용 가능 혜택 ====
+def profile_dashboard(request):
+    """사용자 프로필 대시보드"""
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    # 최근 활동 기록
+    recent_points = PointHistory.objects.filter(user_profile=profile).order_by('-created_at')[:10]
+    recent_achievements = UserAchievement.objects.filter(user_profile=profile).order_by('-earned_at')[:5]
+    recent_level_ups = LevelUpHistory.objects.filter(user_profile=profile).order_by('-created_at')[:5]
+    
+    # 사용 가능한 혜택
     available_benefits = FinancialBenefit.objects.filter(
         is_active=True,
         required_level__lte=profile.current_level,
         required_points__lte=profile.total_points
     )
-
-    # ==== 업적 진행 ====
+    
+    # 업적 진행 상황
     achievements = Achievement.objects.filter(is_active=True)
-    user_achievements = _ua_qs_for(profile)
+    user_achievements = UserAchievement.objects.filter(user_profile=profile)
     achievement_progress = []
+    
     for achievement in achievements:
         if user_achievements.filter(achievement=achievement).exists():
             progress = 100
             status = "달성"
-            current_value = getattr(profile, 'current_level', 0)
         else:
-            if   achievement.achievement_type == 'quiz':       current_value = getattr(profile, 'quizzes_completed', 0)
-            elif achievement.achievement_type == 'assessment': current_value = getattr(profile, 'assessments_completed', 0)
-            elif achievement.achievement_type == 'plan':       current_value = getattr(profile, 'plans_created', 0)
-            elif achievement.achievement_type == 'streak':     current_value = getattr(profile, 'streak_days', 0)
-            elif achievement.achievement_type == 'level':      current_value = getattr(profile, 'current_level', 0)
-            else:                                              current_value = 0
-            req = max(1, getattr(achievement, 'requirement_value', 1))
-            progress = min(int((current_value / req) * 100), 100)
+            # 진행률 계산 (간단한 예시)
+            if achievement.achievement_type == 'quiz':
+                current_value = profile.quizzes_completed
+            elif achievement.achievement_type == 'assessment':
+                current_value = profile.assessments_completed
+            elif achievement.achievement_type == 'plan':
+                current_value = profile.plans_created
+            elif achievement.achievement_type == 'streak':
+                current_value = profile.streak_days
+            elif achievement.achievement_type == 'level':
+                current_value = profile.current_level
+            else:
+                current_value = 0
+            
+            progress = min(int((current_value / achievement.requirement_value) * 100), 100)
             status = "진행중" if progress < 100 else "달성"
+        
         achievement_progress.append({
             'achievement': achievement,
             'progress': progress,
             'status': status,
-            'current_value': current_value
+            'current_value': current_value if 'current_value' in locals() else 0
         })
-
-    # ==== 리더보드/차트용 통계 ====
-    total_points = points_base.aggregate(s=Sum('points'))['s'] or 0
-
-    cur_level = (total_points // 1000) + 1
-    cur_level_base = (cur_level - 1) * 1000
-    next_level_points = cur_level * 1000
-    progress_rate = int(((total_points - cur_level_base) / max(1, next_level_points - cur_level_base)) * 100)
-    points_to_next = max(0, next_level_points - total_points)
-
-    # 7일 포인트 추이 (when_date 기준)
-    labels, data_points = [], []
-    for i in range(6, -1, -1):
-        day = (tznow - timedelta(days=i)).date()
-        labels.append(day.strftime('%m/%d'))
-        pts = points_base.filter(when_date=day).aggregate(s=Sum('points'))['s'] or 0
-        data_points.append(int(pts))
-
-    # 정답률
-    attempts_qs = _attempts_qs_for(profile, user)
-    total_attempts = attempts_qs.count()
-    correct_answers = _answers_qs_for(profile, user).filter(is_correct=True).count()
-    accuracy = round((correct_answers / total_attempts) * 100, 1) if total_attempts else 0.0
-
-    # 활동일/스트릭 (최근 30일, when_date 기준)
-    last_30 = tznow.date() - timedelta(days=29)
-    activity_days = (
-        points_base
-        .filter(when_date__gte=last_30)
-        .values_list('when_date', flat=True)
-        .distinct()
-    )
-    activity_set, streak = set(activity_days), 0
-    d = tznow.date()
-    while d in activity_set:
-        streak += 1
-        d = d - timedelta(days=1)
-
-    achievements_count = _ua_qs_for(profile).count()
-    used_benefits = _benefit_user_qs(user, profile).order_by('-activated_at')[:5]
-
-    # 미니 리더보드 (UserProfile → User 경유)
-    leaderboard = []
-    try:
-        raw = (PointHistory.objects
-               .select_related('user_profile__user')
-               .values('user_profile__user__id', 'user_profile__user__username')
-               .annotate(total=Sum('points'))
-               .order_by('-total')[:5])
-        leaderboard = [{
-            'display_name': (r.get('user_profile__user__username') or f"user#{r.get('user_profile__user__id')}"),
-            'total': r.get('total') or 0
-        } for r in raw]
-    except Exception:
-        # 모델 스키마가 다를 경우 대체 경로
-        try:
-            raw = (PointHistory.objects
-                   .values('user__id', 'user__username')
-                   .annotate(total=Sum('points'))
-                   .order_by('-total')[:5])
-            leaderboard = [{
-                'display_name': (r.get('user__username') or f"user#{r.get('user__id')}"),
-                'total': r.get('total') or 0
-            } for r in raw]
-        except Exception:
-            leaderboard = []
-
+    
     context = {
         'profile': profile,
         'recent_points': recent_points,
@@ -212,23 +76,9 @@ def dashboard(request):
         'recent_level_ups': recent_level_ups,
         'available_benefits': available_benefits,
         'achievement_progress': achievement_progress,
-        'total_points': total_points,
-        'cur_level': cur_level,
-        'next_level_points': next_level_points,
-        'points_to_next': points_to_next,
-        'progress_rate': progress_rate,
-        'labels': labels,
-        'data_points': data_points,
-        'total_attempts': total_attempts,
-        'correct_answers': correct_answers,
-        'accuracy': accuracy,
-        'streak': streak,
-        'achievements_count': achievements_count,
-        'used_benefits': used_benefits,
-        'leaderboard': leaderboard,
     }
-    return render(request, 'reward/dashboard.html', context)
-
+    
+    return render(request, 'reward/profile_dashboard.html', context)
 
 @login_required
 def quiz_list(request):
@@ -248,72 +98,74 @@ def quiz_list(request):
 
 @login_required
 def take_quiz(request, quiz_id):
+    """퀴즈 풀기"""
     quiz = get_object_or_404(Quiz, id=quiz_id, is_active=True)
-    profile, _ = UserProfile.objects.get_or_create(user=request.user)
-
-    # 이미 응시했는지 확인
-    existing = QuizAttempt.objects.filter(user_profile=profile, quiz=quiz) \
-                                  .order_by('-completed_at').first()
-
-    # ★ 테스트 우회: 관리자이거나 ?retry=1 이면 통과
-    allow_retry = request.user.is_staff or request.GET.get('retry') == '1'
-
-    if existing and not allow_retry:
-        messages.warning(request, '이미 응시한 퀴즈입니다. 다시 풀 수 없습니다.')
-        return redirect('reward:quiz_result', attempt_id=existing.id)
-
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
     if request.method == 'POST':
-        attempt = QuizAttempt.objects.create(user_profile=profile, quiz=quiz, score=0, max_score=0)
+        # 답변 처리
         score = 0
         max_score = 0
-
-        for question in quiz.questions.prefetch_related('options'):
+        answers = {}
+        
+        for question in quiz.questions.all():
             max_score += question.points
-
-            selected_letter = request.POST.get(f'question_{question.id}')
-            selected_option = question.options.filter(order=selected_letter).first() if selected_letter else None
-            is_correct = bool(selected_option and selected_option.is_correct)
-
-            if is_correct:
-                score += question.points
-
-            QuizAnswer.objects.create(
-                attempt=attempt,
-                question=question,
-                selected_order=selected_letter,
-                selected_option=selected_option,
-                is_correct=is_correct,
-                points_awarded=question.points if is_correct else 0,
-            )
-
-        attempt.score = score
-        attempt.max_score = max_score
-        attempt.save()
-
-        if score > 0 and max_score > 0:
+            user_answer = request.POST.get(f'question_{question.id}')
+            
+            if user_answer:
+                answers[question.id] = user_answer
+                # 정답 확인
+                correct_option = question.options.filter(is_correct=True).first()
+                if correct_option and correct_option.order == user_answer:
+                    score += question.points
+        
+        # 퀴즈 시도 기록
+        attempt = QuizAttempt.objects.create(
+            user_profile=profile,
+            quiz=quiz,
+            score=score,
+            max_score=max_score
+        )
+        
+        # 포인트 지급
+        if score > 0:
             points_earned = int((score / max_score) * quiz.points_reward)
             profile.add_points(points_earned, f"퀴즈: {quiz.title}")
-        profile.quizzes_completed += 1
-        profile.save()
-        check_achievements(profile)
-
-        messages.success(request, f'퀴즈 완료! {score}/{max_score}점')
+            
+            # 퀴즈 완료 통계 업데이트
+            profile.quizzes_completed += 1
+            profile.save()
+            
+            # 업적 체크
+            check_achievements(profile)
+            
+            messages.success(request, f'퀴즈 완료! {points_earned}점을 획득했습니다!')
+        else:
+            messages.warning(request, '퀴즈를 완료했지만 점수를 획득하지 못했습니다.')
+        
         return redirect('reward:quiz_result', attempt_id=attempt.id)
-
-    return render(request, 'reward/take_quiz.html', {'quiz': quiz, 'questions': quiz.questions.all()})
-
+    
+    # 퀴즈 질문과 선택지
+    questions = quiz.questions.all()
+    
+    context = {
+        'quiz': quiz,
+        'questions': questions,
+    }
+    
+    return render(request, 'reward/take_quiz.html', context)
 
 @login_required
 def quiz_result(request, attempt_id):
-    attempt = get_object_or_404(
-        QuizAttempt.objects.select_related('quiz', 'user_profile__user')
-        .prefetch_related('answers__question__options', 'answers__selected_option'),
-        id=attempt_id, user_profile__user=request.user
-    )
-    return render(request, 'reward/quiz_result.html', {
-        'attempt': attempt, 'quiz': attempt.quiz, 'answers': attempt.answers.all()
-    })
-
+    """퀴즈 결과"""
+    attempt = get_object_or_404(QuizAttempt, id=attempt_id, user_profile__user=request.user)
+    
+    context = {
+        'attempt': attempt,
+        'quiz': attempt.quiz,
+    }
+    
+    return render(request, 'reward/quiz_result.html', context)
 
 @login_required
 def benefits_list(request):
@@ -401,47 +253,23 @@ def achievements_list(request):
 
 @login_required
 def leaderboard(request):
-    """리더보드 + 지난 7일 변화량 뱃지"""
-    level_leaders  = UserProfile.objects.order_by('-current_level', '-experience_points')[:20]
-    point_leaders  = UserProfile.objects.order_by('-total_points')[:20]
+    """리더보드"""
+    # 레벨별 순위
+    level_leaders = UserProfile.objects.order_by('-current_level', '-experience_points')[:20]
+    
+    # 포인트별 순위
+    point_leaders = UserProfile.objects.order_by('-total_points')[:20]
+    
+    # 연속 활동일별 순위
     streak_leaders = UserProfile.objects.order_by('-streak_days')[:20]
-
-    since = timezone.now() - timedelta(days=7)
-
-    ph = PointHistory.objects.filter(created_at__gte=since)
-    points_delta = {r['user_profile']: r['delta'] or 0
-                    for r in ph.values('user_profile').annotate(delta=Sum('points'))}
-
-    lh = LevelUpHistory.objects.filter(created_at__gte=since)
-    levels_delta = {r['user_profile']: r['delta']
-                    for r in lh.values('user_profile').annotate(delta=Count('id'))}
-
-    act = (ph.annotate(day=TruncDate('created_at'))
-             .values('user_profile', 'day').distinct()
-             .values('user_profile').annotate(cnt=Count('day')))
-    active_days_7d = {r['user_profile']: r['cnt'] for r in act}
-
-    def attach(board):
-        return [{
-            'profile': p,
-            'delta_points': points_delta.get(p.id, 0),
-            'delta_levels': levels_delta.get(p.id, 0),
-            'active_days_7d': active_days_7d.get(p.id, 0),
-        } for p in board]
-
+    
     context = {
-        'since_date': since.date(),
-
-        'level_board': attach(level_leaders),
-        'point_board': attach(point_leaders),
-        'streak_board': attach(streak_leaders),
-
         'level_leaders': level_leaders,
         'point_leaders': point_leaders,
         'streak_leaders': streak_leaders,
     }
+    
     return render(request, 'reward/leaderboard.html', context)
-
 
 def check_achievements(profile):
     """업적 달성 체크"""

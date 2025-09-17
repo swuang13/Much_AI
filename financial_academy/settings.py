@@ -136,8 +136,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom color for the project
 PROJECT_COLOR = '#1d5091'
-
-# --- Auth redirects ---
-LOGIN_URL = '/accounts/login/'              # 로그인 페이지 URL (기본 auth 사용 시)
-LOGIN_REDIRECT_URL = 'reward:quiz_list'     # 로그인 성공 후 이동
-LOGOUT_REDIRECT_URL = 'reward:reward_home'  # 로그아웃 후 이동
