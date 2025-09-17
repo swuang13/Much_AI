@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}소득 데이터 확인 - Much{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section mb-4">
+  <div class="hero-container">
+    <div class="container">
+      <div class="row align-items-center" style="min-height: 20vh;">
+        <div class="col-lg-8">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              <i class="fas fa-clipboard-check me-3"></i>소득 데이터 확인
+            </h1>
+            <p class="hero-subtitle">
+              저장된 12개월 소득 데이터가 맞는지 확인해 주세요.<br>
+              맞다면 바로 플랜을 생성합니다.
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="hero-visual">
+            <div class="hero-icon">
+              <i class="fas fa-clipboard-check"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h5 class="info-card-title">
+                        <i class="fas fa-info-circle me-2"></i>기본 정보
+                    </h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">소득 유형</h6>
+                        <p class="fw-bold text-primary">{{ income_type|default:'freelance' }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">월별 소득 현황</h6>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        {% for _ in "123456789012"|make_list %}
+                                        <th class="text-center fw-bold">{{ forloop.counter }}월</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        {% for v in incomes %}
+                                        <td class="text-end fw-semibold text-success">{{ v|intcomma }}원</td>
+                                        {% endfor %}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 액션 버튼 섹션 -->
+                <div class="text-center mt-4 pt-3 border-top">
+                    <div class="d-flex justify-content-center gap-3 flex-wrap">
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="prediction_id" value="{{ prediction.id }}">
+                            <button type="submit" class="btn btn-form-submit btn-lg">
+                                <i class="fas fa-magic me-2"></i>이 데이터로 플랜 생성
+                            </button>
+                        </form>
+                        <a href="{% url 'plan:income_prediction' %}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-edit me-2"></i>데이터 수정 입력하기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<style>
+/* 테이블 스타일링 */
+.table-hover tbody tr:hover {
+    background-color: rgba(29, 80, 145, 0.05);
+}
+
+.table th {
+    border-top: none;
+    border-bottom: 2px solid #e2e8f0;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.table td {
+    border-top: 1px solid #e2e8f0;
+    border-bottom: none;
+}
+
+/* 버튼 스타일링 */
+.btn-form-submit {
+    background-color: #1d5091;
+    border-color: #1d5091;
+    color: white;
+    padding: 12px 24px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+.btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+    padding: 12px 24px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+/* 버튼 호버 효과 */
+.btn-form-submit:hover {
+    background-color: #1a4780;
+    border-color: #1a4780;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(29, 80, 145, 0.4);
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(108, 117, 125, 0.3);
+}
+
+/* 정보 카드 스타일링 */
+.info-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.info-card-header {
+    background: linear-gradient(135deg, #1d5091 0%, #2563eb 100%);
+    color: white;
+    padding: 1.5rem;
+    border-bottom: none;
+}
+
+.info-card-title {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.info-card-body {
+    padding: 2rem;
+    background-color: #ffffff;
+}
+</style>
+

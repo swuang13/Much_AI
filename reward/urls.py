@@ -15,3 +15,5 @@ urlpatterns = [
     path('leaderboard/', views.leaderboard, name='leaderboard'),
     path('update-streak/', views.update_streak, name='update_streak'),
 ]
+
+

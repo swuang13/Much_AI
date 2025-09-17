@@ -19,6 +19,9 @@ django-compressor==4.4
 # 이미지 처리
 Pillow==10.2.0
 
+# AI via Hugging Face Inference API
+huggingface_hub>=0.23.0
+
 # API 개발 (향후 확장용)
 # djangorestframework==3.14.0
 
@@ -30,3 +33,4 @@ pytest-django==4.7.0
 black==23.12.1
 flake8==7.0.0
 isort==5.13.2
+

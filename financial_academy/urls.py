@@ -21,6 +21,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('django.contrib.auth.urls')),  # Django 기본 인증 URL
     path('', include('asset.urls')),  # 메인 페이지는 asset 앱으로
     path('plan/', include('plan.urls')),
     path('reward/', include('reward.urls')),

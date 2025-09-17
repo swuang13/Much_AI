@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}AI 소득 예측 - Much{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 헤더 섹션 -->
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1 class="display-5 fw-bold text-primary mb-3">
+                <i class="fas fa-brain me-3"></i>AI 소득 예측
+            </h1>
+            <p class="lead text-muted">
+                Llama 3.1 8B 모델을 활용한 프리랜서 맞춤형 소득 예측 서비스
+            </p>
+        </div>
+    </div>
+
+    <!-- 소득 예측 폼 -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>소득 데이터 입력
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="incomePredictionForm">
+                        {% csrf_token %}
+
+                        <!-- 소득 유형 선택 -->
+                        <div class="mb-4">
+                            <label for="income_type" class="form-label fw-bold">소득 유형</label>
+                            <select class="form-select" id="income_type" name="income_type" required>
+                                <option value="">소득 유형을 선택하세요</option>
+                                <option value="freelance">프리랜서</option>
+                                <option value="business">사업자</option>
+                                <option value="employee">급여소득자</option>
+                                <option value="mixed">혼합소득</option>
+                            </select>
+                        </div>
+
+                        <!-- 월별 소득 입력 -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">최근 12개월 소득 (원)</label>
+                            <div class="row">
+                                {% for month in "123456789012"|make_list %}
+                                <div class="col-md-4 mb-3">
+                                    <label for="monthly_income_{{ forloop.counter }}" class="form-label">
+                                        {{ forloop.counter }}월
+                                    </label>
+                                    <input type="number" class="form-control monthly-income-input"
+                                        id="monthly_income_{{ forloop.counter }}"
+                                        name="monthly_income_{{ forloop.counter }}" min="0" step="1000" placeholder="0">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- 실시간 예측 결과 -->
+                        <div id="predictionResult" class="mb-4" style="display: none;">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-magic me-2"></i>AI 예측 결과
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <div class="text-center">
+                                                <h6 class="text-muted">예상 월 소득</h6>
+                                                <h4 class="text-primary" id="predictedMonthly">-</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="text-center">
+                                                <h6 class="text-muted">예상 연 소득</h6>
+                                                <h4 class="text-success" id="predictedYearly">-</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="text-center">
+                                                <h6 class="text-muted">신뢰도</h6>
+                                                <h4 class="text-warning" id="confidence">-</h4>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <div class="text-center">
+                                                <h6 class="text-muted">변동성</h6>
+                                                <h4 class="text-info" id="volatility">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <h6 class="text-muted">계절성 분석</h6>
+                                        <p id="seasonalAnalysis" class="mb-2">-</p>
+
+                                        <h6 class="text-muted">위험 요소</h6>
+                                        <ul id="riskFactors" class="mb-2"></ul>
+
+                                        <h6 class="text-muted">AI 권장사항</h6>
+                                        <ul id="recommendations"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 제출 버튼 -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-rocket me-2"></i>플랜 생성하기
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 모델 정보 -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-robot me-2"></i>AI 모델 정보
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>사용 모델</h6>
+                            <p class="text-muted">Meta Llama 3.1 8B Instruct</p>
+
+                            <h6>특화 기능</h6>
+                            <ul class="text-muted">
+                                <li>프리랜서 소득 패턴 분석</li>
+                                <li>계절성 변동 예측</li>
+                                <li>위험 요소 식별</li>
+                                <li>맞춤형 권장사항 제공</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>예측 정확도</h6>
+                            <div class="progress mb-3">
+                                <div class="progress-bar bg-success" style="width: 85%">85%</div>
+                            </div>
+
+                            <h6>분석 요소</h6>
+                            <ul class="text-muted">
+                                <li>과거 12개월 소득 트렌드</li>
+                                <li>계절적 변동성</li>
+                                <li>성장 패턴 분석</li>
+                                <li>시장 환경 고려</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('incomePredictionForm');
+        const predictionResult = document.getElementById('predictionResult');
+        const monthlyInputs = document.querySelectorAll('.monthly-income-input');
+
+        // 실시간 예측 (입력 완료 시)
+        monthlyInputs.forEach(input => {
+            input.addEventListener('input', debounce(performPrediction, 1000));
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function performPrediction() {
+            const incomeType = document.getElementById('income_type').value;
+            const monthlyIncomes = Array.from(monthlyInputs).map(input =>
+                input.value ? parseFloat(input.value) : 0
+            );
+
+            // 최소 3개월 데이터가 있어야 예측 수행
+            const validIncomes = monthlyIncomes.filter(income => income > 0);
+            if (validIncomes.length < 3 || !incomeType) {
+                predictionResult.style.display = 'none';
+                return;
+            }
+
+            // API 호출
+            fetch('{% url "plan:api_predict_income" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({
+                    monthly_incomes: monthlyIncomes,
+                    income_type: incomeType
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayPredictionResult(data.prediction);
+                    } else {
+                        console.error('예측 실패:', data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('API 호출 실패:', error);
+                });
+        }
+
+        function displayPredictionResult(prediction) {
+            // 예측 결과 표시
+            document.getElementById('predictedMonthly').textContent =
+                prediction.predicted_monthly_income.toLocaleString() + '원';
+            document.getElementById('predictedYearly').textContent =
+                prediction.predicted_yearly_income.toLocaleString() + '원';
+            document.getElementById('confidence').textContent =
+                prediction.confidence_level.toFixed(1) + '%';
+            document.getElementById('volatility').textContent =
+                prediction.income_volatility.toFixed(1) + '%';
+
+            // 계절성 분석
+            document.getElementById('seasonalAnalysis').textContent =
+                prediction.seasonal_pattern || '분석 중...';
+
+            // 위험 요소
+            const riskFactorsList = document.getElementById('riskFactors');
+            riskFactorsList.innerHTML = '';
+            if (prediction.risk_factors && prediction.risk_factors.length > 0) {
+                prediction.risk_factors.forEach(factor => {
+                    const li = document.createElement('li');
+                    li.textContent = factor;
+                    li.className = 'text-warning';
+                    riskFactorsList.appendChild(li);
+                });
+            } else {
+                const li = document.createElement('li');
+                li.textContent = '특별한 위험 요소가 발견되지 않았습니다.';
+                li.className = 'text-success';
+                riskFactorsList.appendChild(li);
+            }
+
+            // 권장사항
+            const recommendationsList = document.getElementById('recommendations');
+            recommendationsList.innerHTML = '';
+            if (prediction.recommendations && prediction.recommendations.length > 0) {
+                prediction.recommendations.forEach(rec => {
+                    const li = document.createElement('li');
+                    li.textContent = rec;
+                    li.className = 'text-info';
+                    recommendationsList.appendChild(li);
+                });
+            }
+
+            // 결과 표시
+            predictionResult.style.display = 'block';
+        }
+    });
+</script>
+{% endblock %}
