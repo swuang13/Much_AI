@@ -3,239 +3,204 @@
 {% block title %}성장 리워드 - Much{% endblock %}
 
 {% block content %}
-<div class="container">
-    <!-- 헤더 섹션 -->
-    <div class="row mb-5">
-        <div class="col-12 text-center">
-            <h1 class="display-4 fw-bold text-primary mb-3">
-                <i class="fas fa-gift me-3"></i>성장 리워드
+
+<!-- Hero Section -->
+<div class="hero-section mb-5">
+  <div class="hero-container">
+    <div class="container">
+      <div class="row align-items-center min-vh-50">
+        <div class="col-lg-8">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              <i class="fas fa-gift me-3"></i>성장 리워드
             </h1>
-            <p class="lead text-muted">
-                Much의 게이미피케이션을 통해 금융 리터러시를 향상시키고 더 많은(Much) 혜택을 받아보세요
+            <p class="hero-subtitle">
+              게이미피케이션으로 학습 동기를 높이고,<br>
+              포인트 · 레벨 · 업적으로 혜택을 받아보세요.
             </p>
-        </div>
-    </div>
-
-    <!-- 게임 요소 소개 -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-gamepad me-2"></i>게임 요소
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 mb-4">
-                            <div class="text-center">
-                                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                                    <i class="fas fa-star fa-2x"></i>
-                                </div>
-                                <h5>포인트 시스템</h5>
-                                <p class="text-muted small">활동을 통해 포인트를 획득하고 다양한 혜택을 이용하세요</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <div class="text-center">
-                                <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                                    <i class="fas fa-level-up-alt fa-2x"></i>
-                                </div>
-                                <h5>레벨업 시스템</h5>
-                                <p class="text-muted small">경험치를 쌓아 레벨을 올리고 더 많은 혜택을 받으세요</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <div class="text-center">
-                                <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                                    <i class="fas fa-trophy fa-2x"></i>
-                                </div>
-                                <h5>업적 시스템</h5>
-                                <p class="text-muted small">다양한 목표를 달성하고 특별한 보상을 받으세요</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <div class="text-center">
-                                <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
-                                    <i class="fas fa-fire fa-2x"></i>
-                                </div>
-                                <h5>연속 활동</h5>
-                                <p class="text-muted small">매일 활동하여 연속 보너스를 받고 동기부여를 유지하세요</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="hero-buttons">
+              <a href="{% url 'reward:dashboard' %}" class="btn btn-hero-primary">
+                <i class="fas fa-user me-2"></i>내 대시보드
+              </a>
+              <a href="{% url 'reward:quiz_list' %}" class="btn btn-hero-secondary">
+                <i class="fas fa-play me-2"></i>퀴즈 시작하기
+              </a>
             </div>
+          </div>
         </div>
-    </div>
-
-    <!-- 퀴즈 시스템 -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-question-circle me-2"></i>금융 리터러시 퀴즈
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>퀴즈 카테고리</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-book text-primary me-2"></i>기초 금융</span>
-                                    <span class="badge bg-primary rounded-pill">쉬움</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-chart-line text-success me-2"></i>투자</span>
-                                    <span class="badge bg-warning rounded-pill">보통</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-credit-card text-info me-2"></i>신용</span>
-                                    <span class="badge bg-warning rounded-pill">보통</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-shield-alt text-warning me-2"></i>보험</span>
-                                    <span class="badge bg-danger rounded-pill">어려움</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><i class="fas fa-calculator text-secondary me-2"></i>세금</span>
-                                    <span class="badge bg-danger rounded-pill">어려움</span>
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>퀴즈 혜택</h5>
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <ul class="list-unstyled">
-                                        <li><i class="fas fa-check text-success me-2"></i>정답 시 포인트 획득</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>카테고리별 난이도별 보상</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>연속 정답 보너스</li>
-                                        <li><i class="fas fa-check text-success me-2"></i>금융 지식 향상</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <a href="{% url 'reward:quiz_list' %}" class="btn btn-primary">
-                                    <i class="fas fa-play me-2"></i>퀴즈 시작하기
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div class="col-lg-4">
+          <div class="hero-visual">
+            <div class="hero-icon">
+              <i class="fas fa-trophy"></i>
             </div>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
+  </div>
 
-    <!-- 금융사 제휴 혜택 -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-handshake me-2"></i>금융사 제휴 혜택
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-primary">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-percentage text-primary fa-3x mb-3"></i>
-                                    <h5 class="card-title">대출 금리 인하</h5>
-                                    <p class="card-text">레벨과 포인트에 따라 대출 금리를 할인받을 수 있습니다.</p>
-                                    <div class="mt-3">
-                                        <span class="badge bg-primary">레벨 5 이상</span>
-                                        <span class="badge bg-secondary">1000 포인트</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-success">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-credit-card text-success fa-3x mb-3"></i>
-                                    <h5 class="card-title">카드 추가 혜택</h5>
-                                    <p class="card-text">신용카드 사용 시 추가 할인과 포인트 적립 혜택을 받습니다.</p>
-                                    <div class="mt-3">
-                                        <span class="badge bg-success">레벨 3 이상</span>
-                                        <span class="badge bg-secondary">500 포인트</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 border-warning">
-                                <div class="card-body text-center">
-                                    <i class="fas fa-chart-line text-warning fa-3x mb-3"></i>
-                                    <h5 class="card-title">투자 수수료 할인</h5>
-                                    <p class="card-text">주식, 펀드 등 투자 상품 이용 시 수수료를 할인받습니다.</p>
-                                    <div class="mt-3">
-                                        <span class="badge bg-warning">레벨 7 이상</span>
-                                        <span class="badge bg-secondary">2000 포인트</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- Features Section -->
+<div class="features-section mb-5">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="feature-card text-center p-4 h-100">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-star" style="font-size: 3rem; color: #1d5091;"></i>
+          </div>
+          <h4 class="fw-bold mb-3">포인트 시스템</h4>
+          <p class="text-muted">활동으로 포인트를 획득하고 다양한 혜택을 사용하세요.</p>
         </div>
-    </div>
-
-    <!-- 리더보드 -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="mb-0">
-                        <i class="fas fa-medal me-2"></i>리더보드
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted">다른 사용자들과 경쟁하며 동기부여를 받아보세요!</p>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="text-center">
-                                <i class="fas fa-crown text-warning fa-2x mb-2"></i>
-                                <h6>레벨 순위</h6>
-                                <p class="text-muted small">가장 높은 레벨을 달성한 사용자</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="text-center">
-                                <i class="fas fa-coins text-warning fa-2x mb-2"></i>
-                                <h6>포인트 순위</h6>
-                                <p class="text-muted small">가장 많은 포인트를 보유한 사용자</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="text-center">
-                                <i class="fas fa-fire text-danger fa-2x mb-2"></i>
-                                <h6>연속 활동 순위</h6>
-                                <p class="text-muted small">가장 오래 연속으로 활동한 사용자</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-3">
-                        <a href="{% url 'reward:leaderboard' %}" class="btn btn-outline-primary">
-                            <i class="fas fa-list me-2"></i>전체 순위 보기
-                        </a>
-                    </div>
-                </div>
-            </div>
+      </div>
+      <div class="col-md-3">
+        <div class="feature-card text-center p-4 h-100">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-level-up-alt" style="font-size: 3rem; color: #1d5091;"></i>
+          </div>
+          <h4 class="fw-bold mb-3">레벨업 시스템</h4>
+          <p class="text-muted">경험치를 쌓아 레벨을 올리고 더 많은 혜택을 받으세요.</p>
         </div>
-    </div>
-
-    <!-- 시작하기 버튼 -->
-    <div class="row">
-        <div class="col-12 text-center">
-            <a href="{% url 'reward:profile_dashboard' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-play me-2"></i>리워드 시작하기
-            </a>
+      </div>
+      <div class="col-md-3">
+        <div class="feature-card text-center p-4 h-100">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-trophy" style="font-size: 3rem; color: #1d5091;"></i>
+          </div>
+          <h4 class="fw-bold mb-3">업적 시스템</h4>
+          <p class="text-muted">목표 달성으로 배지를 모으고 특별한 보상을 받으세요.</p>
         </div>
+      </div>
+      <div class="col-md-3">
+        <div class="feature-card text-center p-4 h-100">
+          <div class="feature-icon mb-3">
+            <i class="fas fa-fire" style="font-size: 3rem; color: #1d5091;"></i>
+          </div>
+          <h4 class="fw-bold mb-3">연속 활동</h4>
+          <p class="text-muted">매일 활동하여 연속 보너스를 받고 동기를 유지하세요.</p>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
+
+<!-- Main Content Cards -->
+<div class="main-content-section">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-6 d-flex">
+        <div class="form-card flex-fill">
+          <div class="form-card-header">
+            <h5 class="form-card-title"><i class="fas fa-question-circle me-2"></i>금융 리터러시 퀴즈</h5>
+          </div>
+          <div class="form-card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="mb-3">퀴즈 카테고리</h6>
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-book text-primary me-2"></i>기초 금융</span>
+                    <span class="badge bg-primary rounded-pill">쉬움</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-chart-line text-success me-2"></i>투자</span>
+                    <span class="badge bg-warning rounded-pill">보통</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-credit-card text-info me-2"></i>신용</span>
+                    <span class="badge bg-warning rounded-pill">보통</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-shield-alt text-warning me-2"></i>보험</span>
+                    <span class="badge bg-danger rounded-pill">어려움</span>
+                  </li>
+                  <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-calculator text-secondary me-2"></i>세금</span>
+                    <span class="badge bg-danger rounded-pill">어려움</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h6 class="mb-3">퀴즈 혜택</h6>
+                <div class="card bg-light">
+                  <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                      <li><i class="fas fa-check text-success me-2"></i>정답 시 포인트 획득</li>
+                      <li><i class="fas fa-check text-success me-2"></i>난이도별 보상</li>
+                      <li><i class="fas fa-check text-success me-2"></i>연속 정답 보너스</li>
+                      <li><i class="fas fa-check text-success me-2"></i>금융 지식 향상</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <a href="{% url 'reward:quiz_list' %}" class="btn btn-primary">
+                    <i class="fas fa-play me-2"></i>퀴즈 시작하기
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 d-flex">
+        <div class="form-card flex-fill">
+          <div class="form-card-header">
+            <h5 class="form-card-title"><i class="fas fa-handshake me-2"></i>금융사 제휴 혜택</h5>
+          </div>
+          <div class="form-card-body">
+            <div class="row g-3">
+              <div class="col-md-4 d-flex">
+                <div class="card flex-fill border-primary">
+                  <div class="card-body text-center">
+                    <i class="fas fa-percentage text-primary fa-2x mb-2"></i>
+                    <h6 class="mb-1">대출 금리 인하</h6>
+                    <p class="text-muted small mb-2">레벨/포인트에 따라 금리 할인</p>
+                    <span class="badge bg-primary me-1">레벨 5+</span>
+                    <span class="badge bg-secondary">1000 pt</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex">
+                <div class="card flex-fill border-success">
+                  <div class="card-body text-center">
+                    <i class="fas fa-credit-card text-success fa-2x mb-2"></i>
+                    <h6 class="mb-1">카드 추가 혜택</h6>
+                    <p class="text-muted small mb-2">추가 할인 · 포인트 적립</p>
+                    <span class="badge bg-success me-1">레벨 3+</span>
+                    <span class="badge bg-secondary">500 pt</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4 d-flex">
+                <div class="card flex-fill border-warning">
+                  <div class="card-body text-center">
+                    <i class="fas fa-chart-line text-warning fa-2x mb-2"></i>
+                    <h6 class="mb-1">투자 수수료 할인</h6>
+                    <p class="text-muted small mb-2">투자 상품 수수료 할인</p>
+                    <span class="badge bg-warning me-1">레벨 7+</span>
+                    <span class="badge bg-secondary">2000 pt</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="row mt-4">
+      <div class="col-12 text-center">
+        <a href="{% url 'reward:leaderboard' %}" class="btn btn-outline-primary me-2">
+          <i class="fas fa-list me-2"></i>전체 순위 보기
+        </a>
+        <a href="{% url 'reward:dashboard' %}" class="btn btn-primary">
+          <i class="fas fa-play me-2"></i>리워드 시작하기
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
