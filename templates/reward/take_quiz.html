@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ quiz.title }} - 퀴즈 풀기{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- 헤더 -->
+  <div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+      <h1 class="h3 fw-bold text-primary mb-0">
+        <i class="fas fa-play-circle me-2"></i>{{ quiz.title }}
+      </h1>
+      <a href="{% url 'reward:quiz_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>목록으로
+      </a>
+    </div>
+    {% if quiz.description %}
+      <div class="col-12"><p class="text-muted mb-0">{{ quiz.description }}</p></div>
+    {% endif %}
+  </div>
+
+  <form method="post" class="mb-5">
+    {% csrf_token %}
+
+    {% for q in questions %}
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header d-flex align-items-center">
+          <span class="badge bg-primary me-2">{{ forloop.counter }}</span>
+          <strong>{{ q.question_text }}</strong>
+        </div>
+        <div class="card-body">
+          {% for opt in q.options.all %}
+            <div class="form-check mb-2">
+              <input
+                class="form-check-input"
+                type="radio"
+                name="question_{{ q.id }}"
+                id="q{{ q.id }}_{{ opt.order }}"
+                value="{{ opt.order }}"
+                {% if forloop.first %}required{% endif %}>
+              <label class="form-check-label" for="q{{ q.id }}_{{ opt.order }}">
+                <strong>{{ opt.order }}.</strong> {{ opt.option_text }}
+              </label>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="alert alert-warning">등록된 문항이 없습니다. 관리자에서 문항을 추가해 주세요.</div>
+    {% endfor %}
+
+    <div class="d-flex gap-2">
+      <a href="{% url 'reward:quiz_list' %}" class="btn btn-outline-secondary">취소</a>
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-paper-plane me-2"></i>제출
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

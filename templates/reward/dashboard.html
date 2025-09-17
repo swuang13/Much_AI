@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}대시보드{% endblock %}
+{% block body_class %}{% endblock %}
+{% load tz %}
+
+{% block content %}
+
+<!-- Page Header (smaller) -->
+<div class="container mb-3">
+  <div class="row">
+    <div class="col-12">
+      <h2 class="fw-bold" style="font-size:1.5rem; color:#0f172a;">
+        <i class="fas fa-user-astronaut me-2"></i>나의 리워드 대시보드
+      </h2>
+    </div>
+  </div>
+  </div>
+
+
+
+<div class="dash">
+  <!-- 상단 KPI -->
+  <div class="grid cards">
+    <div class="panel kpi ring">
+      <h3>현재 레벨</h3>
+      <div class="value">Lv. {{ cur_level|default:profile.current_level|default:1 }}</div>
+      <div class="sub">총 포인트 {{ total_points|default:profile.total_points|default:0 }} pt</div>
+    </div>
+    <div class="panel kpi">
+      <h3>정답률</h3>
+      <div class="value">{{ accuracy|default:0 }}%</div>
+      <div class="sub">시도 {{ total_attempts|default:0 }} · 정답 {{ correct_answers|default:0 }}</div>
+    </div>
+    <div class="panel kpi">
+      <h3>연속 활동</h3>
+      <div class="value">{{ streak|default:profile.streak_days|default:0 }}일</div>
+      <div class="sub">최근 30일 기준</div>
+    </div>
+    <div class="panel kpi">
+      <h3>획득 업적</h3>
+      <div class="value">{{ achievements_count|default:0 }}</div>
+      <div class="sub">활성 업적 기준</div>
+    </div>
+  </div>
+
+  <div class="flex mt-16">
+    <!-- 좌: 포인트 추이 + 최근 포인트 -->
+    <div class="col panel panel-pad">
+      <div class="header">
+        <div class="title">최근 7일 포인트 추이</div>
+      </div>
+      <canvas id="chart7d" height="80"></canvas>
+
+      {# 안전한 JSON 주입 #}
+      {{ labels|json_script:"labels-json" }}
+      {{ data_points|json_script:"points-json" }}
+
+      <div class="header mt-18">
+        <div class="title">최근 포인트 내역</div>
+        <span class="badge">최신 10개</span>
+      </div>
+
+      {% if recent_points %}
+      <div class="scroll-y" aria-label="최근 포인트 내역 스크롤 영역">
+        <table class="table table-striped table-hover">
+          <thead><tr><th>일시</th><th>사유</th><th style="text-align:right;">포인트</th></tr></thead>
+          <tbody>
+          {% for p in recent_points %}
+            <tr>
+              <td>
+                {% if p.when %}
+                  {{ p.when|localtime|date:"Y-m-d H:i" }}
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>{{ p.reason|default:"기타" }}</td>
+              <td style="text-align:right;" class="{% if p.points >= 0 %}pos{% else %}neg{% endif %}">
+                {% if p.points >= 0 %}+{% endif %}{{ p.points }}
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty">최근 포인트 내역이 없습니다.</div>
+      {% endif %}
+    </div>
+
+    <!-- 우: 레벨 진행도 + 미니 리더보드 -->
+    <div class="col panel panel-pad">
+      <div class="header">
+        <div class="title">레벨 진행도</div>
+        <span class="pill">현재 레벨: {{ cur_level }}</span>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress"><div class="bar" style="--w: {{ progress_rate|default:0 }};"></div></div>
+        <div class="sub" style="margin-top:8px;">
+          다음 레벨까지 <b>{{ points_to_next|default:0 }}</b> pt 남음 (기준: {{ total_points }} / {{ next_level_points }} pt)
+        </div>
+      </div>
+
+      <div class="header mt-18">
+        <div class="title">미니 리더보드</div>
+      </div>
+
+      {% if leaderboard %}
+      <div class="scroll-y" aria-label="미니 리더보드 스크롤 영역">
+        <table class="table table-striped table-hover">
+          <thead><tr><th>순위</th><th>사용자</th><th style="text-align:right;">포인트</th></tr></thead>
+          <tbody>
+          {% for row in leaderboard %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>
+                {% if row.display_name %}@{{ row.display_name }}{% else %}익명{% endif %}
+              </td>
+              <td style="text-align:right;">{{ row.total|default:0 }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="empty">리더보드 데이터가 없습니다.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 최근 업적/레벨업/혜택 -->
+  <div class="flex mt-16">
+    <div class="col panel panel-pad">
+      <div class="header"><div class="title">최근 획득 업적</div><span class="badge">최신 5개</span></div>
+      {% if recent_achievements %}
+      <table class="table">
+        <thead><tr><th>일시</th><th>업적</th><th>설명</th></tr></thead>
+        <tbody>
+        {% for ua in recent_achievements %}
+          <tr>
+            <td>{{ ua.earned_at|date:"Y-m-d H:i" }}</td>
+            <td>{{ ua.achievement.title|default:ua.achievement.name }}</td>
+            <td class="sub">{{ ua.achievement.description|default:"" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="empty">최근 업적이 없습니다.</div>
+      {% endif %}
+    </div>
+
+    <div class="col panel panel-pad">
+      <div class="header"><div class="title">최근 레벨업</div><span class="badge">최신 5개</span></div>
+      {% if recent_level_ups %}
+      <table class="table">
+        <thead><tr><th>일시</th><th>이전 → 이후</th><th style="text-align:right;">획득 포인트</th></tr></thead>
+        <tbody>
+        {% for lu in recent_level_ups %}
+          <tr>
+            <td>{{ lu.activated_at|date:"Y-m-d H:i" }}</td>
+            <td>Lv. {{ lu.old_level }} → <b>Lv. {{ lu.new_level }}</b></td>
+            <td style="text-align:right;">{{ lu.points_gained|default:"-" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="empty">레벨업 기록이 없습니다.</div>
+      {% endif %}
+
+      <div class="header mt-18"><div class="title">사용 가능 혜택</div></div>
+      {% if available_benefits %}
+      <table class="table">
+        <thead><tr><th>혜택</th><th>조건</th><th style="text-align:right;">상태</th></tr></thead>
+        <tbody>
+        {% for b in available_benefits %}
+          <tr>
+            <td>{{ b.name }}</td>
+            <td class="sub">Lv. {{ b.required_level }} / {{ b.required_points }} pt</td>
+            <td style="text-align:right;">{{ b.is_active|yesno:"활성,비활성" }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="empty">현재 조건을 충족하는 혜택이 없습니다.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 업적 진행도 -->
+  <div class="panel panel-pad mt-16">
+    <div class="header"><div class="title">업적 진행도</div><span class="pill">실시간</span></div>
+    {% if achievement_progress %}
+      <div class="grid grid-2 gap-12">
+      {% for ap in achievement_progress %}
+        <div class="panel panel-sm-pad">
+          <div class="d-flex align-items-center justify-content-between" style="margin-bottom:8px;">
+            <div style="font-weight:700;">{{ ap.achievement.title|default:ap.achievement.name }}</div>
+            <span class="badge">{{ ap.status }}</span>
+          </div>
+          <div class="sub" style="margin-bottom:8px;">
+            목표: {{ ap.achievement.requirement_value }} · 현재: {{ ap.current_value }}
+            {% if ap.achievement.achievement_type %} · 유형: {{ ap.achievement.achievement_type }}{% endif %}
+          </div>
+          <div class="progress-wrap">
+            <div class="progress"><div class="bar" style="--w: {{ ap.progress }};"></div></div>
+            <div class="sub" style="margin-top:6px;">진행률 {{ ap.progress }}%</div>
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">표시할 업적이 없습니다.</div>
+    {% endif %}
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  (function () {
+    // JSON 안전 파싱
+    const nodeLabels = document.getElementById('labels-json');
+    const nodePoints = document.getElementById('points-json');
+    const canvas = document.getElementById('chart7d');
+
+    if (!canvas || !nodeLabels || !nodePoints) return;
+
+    let labels, dataPoints;
+    try {
+      labels = JSON.parse(nodeLabels.textContent);
+      dataPoints = JSON.parse(nodePoints.textContent);
+    } catch (e) {
+      console.error('차트 데이터 파싱 에러:', e);
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          label: '일별 포인트',
+          data: dataPoints,
+          tension: 0.35,
+          borderWidth: 2,
+          pointRadius: 3,
+          fill: true,
+          // 다크테마에서 또렷하게 보이도록 색 지정
+          borderColor: '#6aa3ff',
+          backgroundColor: 'rgba(106,163,255,.18)',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#9fb0d1' }, grid: { color: '#14203b' } },
+          y: { beginAtZero: true, ticks: { color: '#9fb0d1' }, grid: { color: '#14203b' } }
+        }
+      }
+    });
+  })();
+</script>
+
+{% endblock %}

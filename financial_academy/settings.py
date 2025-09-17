@@ -154,8 +154,7 @@ PROJECT_COLOR = "#1d5091"
 
 # 로그인/로그아웃 리다이렉트 설정
 LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/plan/"
-LOGOUT_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL = "/reward/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
 # 로깅 설정

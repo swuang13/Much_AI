@@ -168,6 +168,22 @@ class QuizAttempt(models.Model):
     def __str__(self):
         return f"{self.user_profile.user.username} - {self.quiz.title} ({self.score}/{self.max_score})"
 
+class QuizAnswer(models.Model):
+    """사용자 한 번의 시도에서 문항별 선택 기록"""
+    attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE)
+    # 사용자가 고른 보기 (문자 라벨 및 FK 둘 다 저장해 두면 템플릿에서 편해요)
+    selected_order = models.CharField(max_length=1, null=True, blank=True)   # 'A'/'B'/'C'/'D'
+    selected_option = models.ForeignKey(QuizOption, null=True, blank=True, on_delete=models.SET_NULL)
+    is_correct = models.BooleanField(default=False)
+    points_awarded = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['question__order', 'id']
+
+    def __str__(self):
+        return f"{self.attempt.id} - Q{self.question.order} ({'O' if self.is_correct else 'X'})"
+
 class FinancialBenefit(models.Model):
     """금융사 제휴 혜택"""
     
@@ -225,6 +241,7 @@ class Achievement(models.Model):
     points_reward = models.IntegerField(default=50)
     requirement_value = models.IntegerField(default=1)  # 달성 조건 값
     is_hidden = models.BooleanField(default=False)  # 숨겨진 업적
+    is_active = models.BooleanField(default=True) # 추가
     
     def __str__(self):
         return self.title

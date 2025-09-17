@@ -5,7 +5,7 @@ app_name = 'reward'
 
 urlpatterns = [
     path('', views.reward_home, name='reward_home'),
-    path('dashboard/', views.profile_dashboard, name='profile_dashboard'),
+    path("dashboard/", views.dashboard, name="dashboard"),
     path('quizzes/', views.quiz_list, name='quiz_list'),
     path('quiz/<int:quiz_id>/', views.take_quiz, name='take_quiz'),
     path('quiz-result/<int:attempt_id>/', views.quiz_result, name='quiz_result'),
