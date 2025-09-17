@@ -151,8 +151,8 @@ class UserBenefitAdmin(admin.ModelAdmin):
 
 @admin.register(Achievement)
 class AchievementAdmin(admin.ModelAdmin):
-    list_display = ['title', 'achievement_type', 'requirement_value', 'points_reward', 'is_hidden']
-    list_filter = ['achievement_type', 'is_hidden']
+    list_display = ['title', 'achievement_type', 'requirement_value', 'points_reward', 'is_hidden', 'is_active']
+    list_filter = ['achievement_type', 'is_hidden', 'is_active']
     search_fields = ['title', 'description']
     ordering = ['achievement_type', 'requirement_value']
     

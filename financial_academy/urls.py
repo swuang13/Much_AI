@@ -25,6 +25,7 @@ urlpatterns = [
     path('', include('asset.urls')),  # 메인 페이지는 asset 앱으로
     path('asset/', include('asset.urls')),
     path('plan/', include('plan.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),  # ★ 로그인/로그아웃 등
     path('reward/', include('reward.urls')),
 ]
 
