@@ -65,6 +65,12 @@ SECRET_KEY=your-secret-key-here
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
+# AI 설정 (Hugging Face Inference API)
+HF_API_KEY=your-hf-api-token
+# 또는
+HUGGINGFACEHUB_API_TOKEN=your-hf-api-token
+AI_MODEL_NAME=meta-llama/Meta-Llama-3.1-8B-Instruct
+
 # 데이터베이스 설정 (개발용)
 DATABASE_URL=sqlite:///db.sqlite3
 

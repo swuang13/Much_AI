@@ -1,0 +1,344 @@
+{% extends 'base.html' %}
+
+{% block title %}플랜 분석 - Much{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- 헤더 섹션 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-primary mb-2">
+                        <i class="fas fa-chart-bar me-3"></i>플랜 분석 및 인사이트
+                    </h1>
+                    <p class="text-muted">{{ plan.get_plan_type_display }} 플랜 - {{ plan.created_at|date:"Y년 m월 d일" }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'plan:plan_detail' plan.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye me-2"></i>상세 보기
+                    </a>
+                    <a href="{% url 'plan:plan_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-list me-2"></i>목록으로
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 주요 지표 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <i class="fas fa-wallet text-primary fa-2x mb-2"></i>
+                    <h6 class="text-muted">총 예상 소득</h6>
+                    <h4 class="text-primary">{{ analytics.total_expected_income|floatformat:0 }}원</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <i class="fas fa-piggy-bank text-success fa-2x mb-2"></i>
+                    <h6 class="text-muted">총 저축 목표</h6>
+                    <h4 class="text-success">{{ analytics.total_savings|floatformat:0 }}원</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <i class="fas fa-chart-line text-warning fa-2x mb-2"></i>
+                    <h6 class="text-muted">총 투자 목표</h6>
+                    <h4 class="text-warning">{{ analytics.total_investment|floatformat:0 }}원</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-info">
+                <div class="card-body">
+                    <i class="fas fa-percentage text-info fa-2x mb-2"></i>
+                    <h6 class="text-muted">평균 저축률</h6>
+                    <h4 class="text-info">{{ analytics.savings_rate|floatformat:1 }}%</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 차트 영역 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>소득 분배 비율
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="incomeDistributionChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>월별 소득 트렌드
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="incomeTrendChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 월별 상세 분석 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table me-2"></i>월별 상세 분석
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>월</th>
+                                    <th>예상 소득</th>
+                                    <th>총 지출</th>
+                                    <th>저축</th>
+                                    <th>투자</th>
+                                    <th>저축률</th>
+                                    <th>가처분 소득</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for monthly_plan in monthly_plans %}
+                                <tr>
+                                    <td class="fw-bold">{{ monthly_plan.year }}년 {{ monthly_plan.month }}월</td>
+                                    <td class="text-primary fw-bold">{{ monthly_plan.expected_income|floatformat:0 }}원
+                                    </td>
+                                    <td>{{ monthly_plan.total_expenses|floatformat:0 }}원</td>
+                                    <td class="text-success fw-bold">{{ monthly_plan.savings_amount|floatformat:0 }}원
+                                    </td>
+                                    <td class="text-warning fw-bold">{{ monthly_plan.investment_amount|floatformat:0 }}원
+                                    </td>
+                                    <td class="text-info fw-bold">
+                                        {% widthratio monthly_plan.savings_amount monthly_plan.expected_income 100 %}%
+                                    </td>
+                                    <td class="text-secondary fw-bold">{{ monthly_plan.disposable_income|floatformat:0
+                                        }}원</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 인사이트 -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>AI 인사이트
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-robot me-2"></i>Llama 3.1 8B 분석 결과</h6>
+                        <p class="mb-0">
+                            현재 플랜은 {{ plan.get_plan_type_display }} 전략으로 설계되었습니다.
+                            예상 소득 {{ plan.income_prediction.predicted_monthly_income|floatformat:0 }}원을 기준으로
+                            월 {{ plan.monthly_savings|floatformat:0 }}원의 저축과
+                            {{ plan.monthly_investment|floatformat:0 }}원의 투자를 계획하고 있습니다.
+                        </p>
+                    </div>
+
+                    <h6>주요 권장사항</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            현재 저축률 {{ analytics.savings_rate|floatformat:1 }}%는 적절한 수준입니다.
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            비상금 목표 {{ plan.emergency_fund_target|floatformat:0 }}원 달성을 위해 지속적인 저축이 필요합니다.
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                            신용등급 {{ plan.current_credit_score }}에서 {{ plan.target_credit_score }}로 개선이 필요합니다.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-target me-2"></i>목표 달성 전략
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>단기 목표 (3개월)</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-right text-primary me-2"></i>
+                            월 저축 목표 달성률 90% 이상
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-right text-primary me-2"></i>
+                            신용카드 사용량 소득 대비 30% 이하 유지
+                        </li>
+                    </ul>
+
+                    <h6>중기 목표 (6개월)</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-right text-success me-2"></i>
+                            비상금 목표의 50% 달성
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-right text-success me-2"></i>
+                            신용등급 50점 이상 향상
+                        </li>
+                    </ul>
+
+                    <h6>장기 목표 (12개월)</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-right text-warning me-2"></i>
+                            비상금 목표 100% 달성
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-arrow-right text-warning me-2"></i>
+                            투자 포트폴리오 다각화
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // 소득 분배 차트
+        const incomeDistributionCtx = document.getElementById('incomeDistributionChart').getContext('2d');
+        new Chart(incomeDistributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['저축', '투자', '주거비', '식비', '교통비', '의료비', '여가비', '기타'],
+                datasets: [{
+                    data: [
+                        {{ analytics.total_savings }},
+                {{ analytics.total_investment }},
+                    {% for monthly_plan in monthly_plans %}{{ monthly_plan.housing_expense }}{% if not forloop.last %} + {% endif %}{% endfor %},
+    {% for monthly_plan in monthly_plans %} { { monthly_plan.food_expense } } {% if not forloop.last %} + {% endif %}{% endfor %},
+    {% for monthly_plan in monthly_plans %} { { monthly_plan.transportation_expense } } {% if not forloop.last %} + {% endif %}{% endfor %},
+    {% for monthly_plan in monthly_plans %} { { monthly_plan.healthcare_expense } } {% if not forloop.last %} + {% endif %}{% endfor %},
+    {% for monthly_plan in monthly_plans %} { { monthly_plan.entertainment_expense } } {% if not forloop.last %} + {% endif %}{% endfor %},
+    {% for monthly_plan in monthly_plans %} { { monthly_plan.other_expenses } } {% if not forloop.last %} + {% endif %}{% endfor %}
+                ],
+    backgroundColor: [
+        '#28a745',
+        '#ffc107',
+        '#007bff',
+        '#17a2b8',
+        '#6f42c1',
+        '#e83e8c',
+        '#fd7e14',
+        '#6c757d'
+    ]
+            }]
+        },
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
+                plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+    });
+
+    // 월별 소득 트렌드 차트
+    const incomeTrendCtx = document.getElementById('incomeTrendChart').getContext('2d');
+    new Chart(incomeTrendCtx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for monthly_plan in monthly_plans %}
+                    '{{ monthly_plan.month }}월'{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+            ],
+        datasets: [{
+            label: '예상 소득',
+            data: [
+                {% for monthly_plan in monthly_plans %}
+                        {{ monthly_plan.expected_income }}{% if not forloop.last %}, {% endif %}
+    {% endfor %}
+                ],
+    borderColor: '#007bff',
+        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+            tension: 0.4
+            }, {
+        label: '저축',
+            data: [
+                {% for monthly_plan in monthly_plans %}
+    { { monthly_plan.savings_amount } } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+                ],
+    borderColor: '#28a745',
+        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            tension: 0.4
+            }, {
+        label: '투자',
+            data: [
+                {% for monthly_plan in monthly_plans %}
+    { { monthly_plan.investment_amount } } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
+                ],
+    borderColor: '#ffc107',
+        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+            tension: 0.4
+            }]
+        },
+    options: {
+        responsive: true,
+            maintainAspectRatio: false,
+                scales: {
+            y: {
+                beginAtZero: true,
+                    ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + '원';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        }
+    }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,831 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}플랜 상세 | Much{% endblock %}
+
+{% block content %}
+<!-- User Status Bar -->
+{% if user.is_authenticated %}
+<div class="user-status-bar mb-4">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="user-info">
+          <i class="fas fa-user-circle text-primary me-2"></i>
+          <span class="fw-semibold">{{ user.first_name|default:user.username }}님의 플랜 상세</span>
+          <span class="text-muted ms-2">생성일: {{ plan.created_at|date:"Y년 m월 d일" }}</span>
+        </div>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-sign-out-alt me-1"></i>로그아웃
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Hero Section -->
+<div class="hero-section mb-5">
+  <div class="hero-container">
+    <div class="container">
+      <div class="row align-items-center min-vh-30">
+        <div class="col-lg-8">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              <i class="fas fa-chart-pie me-3"></i>{{ plan.get_plan_type_display }} 플랜
+            </h1>
+            <p class="hero-subtitle">
+              AI가 분석한 맞춤형 자산 관리 플랜으로<br>
+              체계적인 재정 관리를 시작하세요.
+            </p>
+            <div class="hero-buttons">
+              <a href="{% url 'plan:plan_analytics' plan.id %}" class="btn btn-hero-primary">
+                <i class="fas fa-chart-bar me-2"></i>분석 보기
+              </a>
+              <a href="{% url 'plan:plan_list' %}" class="btn btn-hero-secondary">
+                <i class="fas fa-list me-2"></i>목록으로
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="hero-visual">
+            <div class="hero-icon">
+              <i class="fas fa-chart-pie"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Key Metrics Section -->
+<div class="key-metrics-section mb-5">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon">
+            <i class="fas fa-wallet"></i>
+          </div>
+          <div class="metric-content">
+            <h6 class="metric-label">예상 월 소득</h6>
+            <h4 class="metric-value">{{ plan.income_prediction.predicted_monthly_income|floatformat:0 }}원</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon">
+            <i class="fas fa-piggy-bank"></i>
+          </div>
+          <div class="metric-content">
+            <h6 class="metric-label">월 저축 목표</h6>
+            <h4 class="metric-value">{{ plan.monthly_savings|floatformat:0 }}원</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="metric-content">
+            <h6 class="metric-label">월 투자 목표</h6>
+            <h4 class="metric-value">{{ plan.monthly_investment|floatformat:0 }}원</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card">
+          <div class="metric-icon">
+            <i class="fas fa-credit-card"></i>
+          </div>
+          <div class="metric-content">
+            <h6 class="metric-label">현재 신용등급</h6>
+            <h4 class="metric-value">{{ plan.current_credit_score }}</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Plan Info Section -->
+<div class="plan-info-section mb-5">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-6">
+        <div class="info-card">
+          <div class="info-card-header">
+            <h5 class="info-card-title">
+              <i class="fas fa-info-circle me-2"></i>플랜 설명
+            </h5>
+          </div>
+          <div class="info-card-body">
+            <p>{{ plan.plan_description|linebreaks }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="info-card">
+          <div class="info-card-header">
+            <h5 class="info-card-title">
+              <i class="fas fa-shield-alt me-2"></i>위험도 평가
+            </h5>
+          </div>
+          <div class="info-card-body">
+            <p>{{ plan.risk_assessment|linebreaks }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Plan Section -->
+<div class="monthly-plan-section mb-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="plan-table-card">
+          <div class="plan-table-header">
+            <h5 class="plan-table-title">
+              <i class="fas fa-calendar-alt me-2"></i>월별 상세 계획
+            </h5>
+          </div>
+          <div class="plan-table-body">
+            <div class="table-responsive">
+              <table class="plan-table">
+                <thead>
+                  <tr>
+                    <th>월</th>
+                    <th>예상 소득</th>
+                    <th>주거비</th>
+                    <th>식비</th>
+                    <th>교통비</th>
+                    <th>의료비</th>
+                    <th>여가비</th>
+                    <th>기타</th>
+                    <th>저축</th>
+                    <th>투자</th>
+                    <th>가처분 소득</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for monthly_plan in monthly_plans %}
+                  <tr>
+                    <td class="month-cell">{{ monthly_plan.year }}년 {{ monthly_plan.month }}월</td>
+                    <td class="income-cell">{{ monthly_plan.expected_income|floatformat:0 }}원</td>
+                    <td class="expense-cell">{{ monthly_plan.housing_expense|floatformat:0 }}원</td>
+                    <td class="expense-cell">{{ monthly_plan.food_expense|floatformat:0 }}원</td>
+                    <td class="expense-cell">{{ monthly_plan.transportation_expense|floatformat:0 }}원</td>
+                    <td class="expense-cell">{{ monthly_plan.healthcare_expense|floatformat:0 }}원</td>
+                    <td class="expense-cell">{{ monthly_plan.entertainment_expense|floatformat:0 }}원</td>
+                    <td class="expense-cell">{{ monthly_plan.other_expenses|floatformat:0 }}원</td>
+                    <td class="savings-cell">{{ monthly_plan.savings_amount|floatformat:0 }}원</td>
+                    <td class="investment-cell">{{ monthly_plan.investment_amount|floatformat:0 }}원</td>
+                    <td class="disposable-cell">{{ monthly_plan.disposable_income|floatformat:0 }}원</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Credit Improvement Section -->
+<div class="credit-improvement-section mb-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="info-card">
+          <div class="info-card-header">
+            <h5 class="info-card-title">
+              <i class="fas fa-arrow-up me-2"></i>신용등급 개선 계획
+            </h5>
+          </div>
+          <div class="info-card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="progress-label">현재 신용등급</h6>
+                <div class="progress mb-3">
+                  <div class="progress-bar" style="width: {{ current_credit_percent }}%">
+                    {{ plan.current_credit_score }} ({{ current_credit_percent }}%)
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h6 class="progress-label">목표 신용등급</h6>
+                <div class="progress mb-3">
+                  <div class="progress-bar" style="width: {{ target_credit_percent }}%">
+                    {{ plan.target_credit_score }} ({{ target_credit_percent }}%)
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 small text-muted" id="coachCreditSummary" style="display:none;"></div>
+            <div class="mt-3">
+              <h6>개선 방안</h6>
+              <p>{{ plan.credit_improvement_plan|default:"현재 설정된 개선 계획이 없습니다."|linebreaks }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Prediction Section -->
+<div class="ai-prediction-section mb-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="info-card">
+          <div class="info-card-header">
+            <h5 class="info-card-title">
+              <i class="fas fa-robot me-2"></i>AI 예측 정보
+            </h5>
+          </div>
+          <div class="info-card-body">
+            <div class="ai-prediction-grid">
+              <div class="ai-metric-item">
+                <div class="ai-metric-label">
+                  <i class="fas fa-chart-line"></i>
+                  예측 신뢰도
+                </div>
+                <div class="ai-progress-container">
+                  <div class="ai-progress-value">{{ plan.income_prediction.confidence_level|floatformat:1 }}%</div>
+                  <div class="ai-progress-bar">
+                    <div class="ai-progress-fill" style="width: {{ plan.income_prediction.confidence_level }}%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ai-metric-item">
+                <div class="ai-metric-label">
+                  <i class="fas fa-wave-square"></i>
+                  소득 변동성
+                </div>
+                <div class="ai-progress-container">
+                  <div class="ai-progress-value">{{ plan.income_prediction.income_volatility|floatformat:1 }}%</div>
+                  <div class="ai-progress-bar">
+                    <div class="ai-progress-fill" style="width: {{ plan.income_prediction.income_volatility }}%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="ai-metric-item">
+                <div class="ai-metric-label">
+                  <i class="fas fa-user-tie"></i>
+                  소득 유형
+                </div>
+                <div class="mt-3">
+                  <span class="info-badge">
+                    <i class="fas fa-briefcase"></i>
+                    {{ plan.income_prediction.get_income_type_display }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="mt-2 small text-muted" id="coachIncomeSummary" style="display:none;"></div>
+            {% if plan.income_prediction.seasonal_pattern %}
+            <div class="ai-seasonal-section">
+              <div class="ai-seasonal-title">
+                <i class="fas fa-calendar-alt"></i>
+                계절성 분석
+              </div>
+              <div class="ai-seasonal-content">
+                {{ plan.income_prediction.seasonal_pattern }}
+              </div>
+              
+              <!-- Seasonal Chart -->
+              <div class="seasonal-chart">
+                <div class="seasonal-chart-grid">
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">10월</div>
+                    <div class="seasonal-month-amount">1,500,000원</div>
+                    <div class="seasonal-bar" style="width: 94%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">11월</div>
+                    <div class="seasonal-month-amount">1,600,000원</div>
+                    <div class="seasonal-bar" style="width: 100%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">12월</div>
+                    <div class="seasonal-month-amount">1,400,000원</div>
+                    <div class="seasonal-bar" style="width: 88%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">1월</div>
+                    <div class="seasonal-month-amount">1,000,000원</div>
+                    <div class="seasonal-bar" style="width: 63%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">2월</div>
+                    <div class="seasonal-month-amount">1,100,000원</div>
+                    <div class="seasonal-bar" style="width: 69%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">3월</div>
+                    <div class="seasonal-month-amount">1,200,000원</div>
+                    <div class="seasonal-bar" style="width: 75%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">4월</div>
+                    <div class="seasonal-month-amount">1,300,000원</div>
+                    <div class="seasonal-bar" style="width: 81%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">5월</div>
+                    <div class="seasonal-month-amount">1,400,000원</div>
+                    <div class="seasonal-bar" style="width: 88%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">6월</div>
+                    <div class="seasonal-month-amount">1,000,000원</div>
+                    <div class="seasonal-bar" style="width: 63%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">7월</div>
+                    <div class="seasonal-month-amount">1,100,000원</div>
+                    <div class="seasonal-bar" style="width: 69%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">8월</div>
+                    <div class="seasonal-month-amount">900,000원</div>
+                    <div class="seasonal-bar" style="width: 56%;"></div>
+                  </div>
+                  <div class="seasonal-month">
+                    <div class="seasonal-month-name">9월</div>
+                    <div class="seasonal-month-amount">1,200,000원</div>
+                    <div class="seasonal-bar" style="width: 75%;"></div>
+                  </div>
+                </div>
+                
+                <!-- Seasonal Summary -->
+                <div class="seasonal-summary">
+                  <div class="seasonal-summary-item">
+                    <div class="seasonal-summary-label">최고 소득</div>
+                    <div class="seasonal-summary-value high">11월 1,600,000원</div>
+                  </div>
+                  <div class="seasonal-summary-item">
+                    <div class="seasonal-summary-label">최저 소득</div>
+                    <div class="seasonal-summary-value low">8월 900,000원</div>
+                  </div>
+                  <div class="seasonal-summary-item">
+                    <div class="seasonal-summary-label">평균 소득</div>
+                    <div class="seasonal-summary-value">1,250,000원</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Coaching Section -->
+<div class="ai-coaching-section mb-5">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="coaching-card">
+          <div class="coaching-header">
+            <h5 class="coaching-title">
+              <i class="fas fa-user-graduate me-2"></i>AI 맞춤 코칭
+            </h5>
+            <button id="btnFetchCoaching" class="btn btn-coaching-refresh">
+              코칭 새로고침
+            </button>
+          </div>
+          <div class="coaching-body" id="coachingBody">
+            <div id="coachingLoadingTop" class="coaching-loading">
+              <div class="spinner-border" role="status" aria-hidden="true"></div>
+              <span class="ms-2">개인 맞춤형 코칭을 생성하고 있습니다...</span>
+            </div>
+            <div id="coachingError" class="coaching-error" style="display:none;"></div>
+            <div id="coachingContent" style="display:none;">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="coaching-subtitle">권장 저축 계획</h6>
+                  <div id="coachSavings" class="coaching-list mb-3"></div>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="coaching-subtitle">신용 관리 계획</h6>
+                  <div id="coachCredit" class="coaching-list mb-3"></div>
+                </div>
+              </div>
+
+              <h6 class="coaching-subtitle">우선 실행 과제</h6>
+              <div id="coachPriority" class="coaching-list mb-3"></div>
+
+              <h6 class="coaching-subtitle">KPI</h6>
+              <div id="coachKpis" class="coaching-kpis mb-3">
+                <div class="mb-2">목표 저축률: <span id="kpiSavings" class="kpi-value"></span></div>
+                <div>목표 이용률: <span id="kpiUtil" class="kpi-value"></span></div>
+              </div>
+
+              <h6 class="coaching-subtitle">청년 정책/제도 추천</h6>
+              <div id="coachPolicies" class="row g-2"></div>
+
+              <div id="coachingSummaries" class="mt-3">
+                <div id="coachCreditSummary" class="coaching-summary" style="display:none;"></div>
+                <div id="coachIncomeSummary" class="coaching-summary" style="display:none;"></div>
+              </div>
+
+              <!-- KPI 적용 버튼 -->
+              <div class="mt-3">
+                <button id="btnApplyKpi" class="btn btn-apply-kpi">KPI 플랜에 적용</button>
+                <span id="applyKpiMsg" class="apply-kpi-msg" style="display:none;"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+<script>
+// 코칭 데이터 표시 함수 (먼저 정의)
+function displayCoaching(advice) {
+    console.log('displayCoaching 호출됨:', advice);
+    
+    const loading = document.getElementById('coachingLoadingTop');
+    const error = document.getElementById('coachingError');
+    const content = document.getElementById('coachingContent');
+    
+    console.log('DOM 요소들:', { loading, error, content });
+    
+    // 로딩 숨기기
+    if (loading) loading.style.display = 'none';
+    if (error) error.style.display = 'none';
+    if (content) {
+        content.style.display = 'block';
+        content.style.visibility = 'visible';
+        content.style.opacity = '1';
+    }
+    
+    // 저축 계획
+    const savingsEl = document.getElementById('coachSavings');
+    console.log('저축 계획 요소:', savingsEl);
+    if (savingsEl && advice.savings_plan) {
+        console.log('저축 계획 데이터:', advice.savings_plan);
+        savingsEl.innerHTML = '';
+        advice.savings_plan.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'list-group-item';
+            div.innerHTML = `<div class="fw-bold">${item.title}</div><div class="small text-muted">${item.detail}</div>`;
+            savingsEl.appendChild(div);
+        });
+        console.log('저축 계획 표시 완료:', advice.savings_plan.length, '개');
+    } else {
+        console.log('저축 계획 요소 또는 데이터 없음');
+    }
+    
+    // 신용 계획
+    const creditEl = document.getElementById('coachCredit');
+    if (creditEl && advice.credit_plan) {
+        creditEl.innerHTML = '';
+        advice.credit_plan.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'list-group-item';
+            div.innerHTML = `<div class="fw-bold">${item.title}</div><div class="small text-muted">${item.detail}</div>`;
+            creditEl.appendChild(div);
+        });
+        console.log('신용 계획 표시 완료:', advice.credit_plan.length, '개');
+    } else {
+        console.log('신용 계획 요소 또는 데이터 없음');
+    }
+    
+    // 우선 과제
+    const priorityEl = document.getElementById('coachPriority');
+    if (priorityEl && advice.priority_actions) {
+        priorityEl.innerHTML = '';
+        advice.priority_actions.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'list-group-item d-flex justify-content-between align-items-start';
+            div.innerHTML = `
+                <div>
+                    <div class="fw-bold">${item.title}</div>
+                    <div class="small text-muted">${item.detail}</div>
+                </div>
+                <span class="badge bg-danger ms-2">우선</span>
+            `;
+            priorityEl.appendChild(div);
+        });
+        console.log('우선 과제 표시 완료:', advice.priority_actions.length, '개');
+    } else {
+        console.log('우선 과제 요소 또는 데이터 없음');
+    }
+    
+    // KPI
+    if (advice.kpis) {
+        const kpiSavingsEl = document.getElementById('kpiSavings');
+        if (kpiSavingsEl) kpiSavingsEl.textContent = advice.kpis.target_savings_rate + '%';
+        
+        const kpiUtilEl = document.getElementById('kpiUtil');
+        if (kpiUtilEl) kpiUtilEl.textContent = advice.kpis.target_utilization_rate + '%';
+        console.log('KPI 표시 완료:', advice.kpis);
+    } else {
+        console.log('KPI 데이터 없음');
+    }
+    
+    // 정책
+    const policiesEl = document.getElementById('coachPolicies');
+    if (policiesEl && advice.policies) {
+        policiesEl.innerHTML = '';
+        advice.policies.forEach(policy => {
+            const col = document.createElement('div');
+            col.className = 'col-md-6';
+            col.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <a href="${policy.link}" target="_blank" rel="noopener" class="card-title h6 mb-0">${policy.title}</a>
+                            <a href="${policy.link}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">신청/안내</a>
+                        </div>
+                        <p class="card-text small text-muted flex-grow-1">${policy.summary}</p>
+                        ${policy.eligibility_hint ? `<small class="text-info">${policy.eligibility_hint}</small>` : ''}
+                    </div>
+                </div>
+            `;
+            policiesEl.appendChild(col);
+        });
+        console.log('정책 표시 완료:', advice.policies.length, '개');
+    } else {
+        console.log('정책 요소 또는 데이터 없음');
+    }
+    
+    console.log('전체 코칭 표시 완료!');
+    
+    // 요약
+    if (advice.summaries) {
+        const creditSummaryEl = document.getElementById('coachCreditSummary');
+        if (creditSummaryEl && advice.summaries.credit) {
+            creditSummaryEl.textContent = advice.summaries.credit;
+        }
+        
+        const incomeSummaryEl = document.getElementById('coachIncomeSummary');
+        if (incomeSummaryEl && advice.summaries.income) {
+            incomeSummaryEl.textContent = advice.summaries.income;
+        }
+    }
+}
+
+// AI 맞춤 코칭 로드 함수 (전역 함수로 만들어서 콘솔에서 직접 호출 가능)
+window.fetchCoaching = async function fetchCoaching() {
+    const loading = document.getElementById('coachingLoadingTop');
+    const error = document.getElementById('coachingError');
+    const content = document.getElementById('coachingContent');
+    
+    try {
+        console.log('fetchCoaching 시작');
+        
+        // 로딩 표시
+        if (loading) loading.style.display = 'block';
+        if (error) error.style.display = 'none';
+        if (content) content.style.display = 'none';
+        
+        // API 호출
+        const response = await fetch(`/plan/api/personal-coaching/{{ plan.id }}/`, {
+            method: 'GET',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('API 응답:', data);
+        
+        if (data.success && data.advice) {
+            console.log('코칭 데이터:', data.advice);
+            displayCoaching(data.advice);
+        } else {
+            console.error('응답 형식 오류:', data);
+            throw new Error('Invalid response format');
+        }
+        
+    } catch (err) {
+        console.error('코칭 로드 실패:', err);
+        if (error) {
+            error.textContent = '코칭을 불러오는데 실패했습니다. 다시 시도해주세요.';
+            error.style.display = 'block';
+        }
+        if (loading) loading.style.display = 'none';
+    }
+}
+
+// 코칭 데이터 표시 함수
+function displayCoaching(advice) {
+    console.log('displayCoaching 호출됨:', advice);
+    
+    const loading = document.getElementById('coachingLoadingTop');
+    const error = document.getElementById('coachingError');
+    const content = document.getElementById('coachingContent');
+    
+    console.log('DOM 요소들:', { loading, error, content });
+    
+    // 로딩 숨기기
+    if (loading) loading.style.display = 'none';
+    if (error) error.style.display = 'none';
+    if (content) {
+        content.style.display = 'block';
+        content.style.visibility = 'visible';
+        content.style.opacity = '1';
+    }
+    
+    // 저축 계획
+    const savingsEl = document.getElementById('coachSavings');
+    console.log('저축 계획 요소:', savingsEl);
+    if (savingsEl && advice.savings_plan) {
+        console.log('저축 계획 데이터:', advice.savings_plan);
+        savingsEl.innerHTML = '';
+        advice.savings_plan.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'list-group-item';
+            div.innerHTML = `<div class="fw-bold">${item.title}</div><div class="small text-muted">${item.detail}</div>`;
+            savingsEl.appendChild(div);
+        });
+        console.log('저축 계획 표시 완료:', advice.savings_plan.length, '개');
+    } else {
+        console.log('저축 계획 요소 또는 데이터 없음');
+    }
+    
+    // 신용 계획
+    const creditEl = document.getElementById('coachCredit');
+    if (creditEl && advice.credit_plan) {
+        creditEl.innerHTML = '';
+        advice.credit_plan.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'list-group-item';
+            div.innerHTML = `<div class="fw-bold">${item.title}</div><div class="small text-muted">${item.detail}</div>`;
+            creditEl.appendChild(div);
+        });
+        console.log('신용 계획 표시 완료:', advice.credit_plan.length, '개');
+    } else {
+        console.log('신용 계획 요소 또는 데이터 없음');
+    }
+    
+    // 우선 과제
+    const priorityEl = document.getElementById('coachPriority');
+    if (priorityEl && advice.priority_actions) {
+        priorityEl.innerHTML = '';
+        advice.priority_actions.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'list-group-item d-flex justify-content-between align-items-start';
+            div.innerHTML = `
+                <div>
+                    <div class="fw-bold">${item.title}</div>
+                    <div class="small text-muted">${item.detail}</div>
+                </div>
+                <span class="badge bg-danger ms-2">우선</span>
+            `;
+            priorityEl.appendChild(div);
+        });
+        console.log('우선 과제 표시 완료:', advice.priority_actions.length, '개');
+    } else {
+        console.log('우선 과제 요소 또는 데이터 없음');
+    }
+    
+    // KPI
+    if (advice.kpis) {
+        const kpiSavingsEl = document.getElementById('kpiSavings');
+        if (kpiSavingsEl) kpiSavingsEl.textContent = advice.kpis.target_savings_rate + '%';
+        
+        const kpiUtilEl = document.getElementById('kpiUtil');
+        if (kpiUtilEl) kpiUtilEl.textContent = advice.kpis.target_utilization_rate + '%';
+        console.log('KPI 표시 완료:', advice.kpis);
+    } else {
+        console.log('KPI 데이터 없음');
+    }
+    
+    // 정책
+    const policiesEl = document.getElementById('coachPolicies');
+    if (policiesEl && advice.policies) {
+        policiesEl.innerHTML = '';
+        advice.policies.forEach(policy => {
+            const col = document.createElement('div');
+            col.className = 'col-md-6';
+            col.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <a href="${policy.link}" target="_blank" rel="noopener" class="card-title h6 mb-0">${policy.title}</a>
+                            <a href="${policy.link}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary">신청/안내</a>
+                        </div>
+                        <p class="card-text small text-muted flex-grow-1">${policy.summary}</p>
+                        ${policy.eligibility_hint ? `<small class="text-info">${policy.eligibility_hint}</small>` : ''}
+                    </div>
+                </div>
+            `;
+            policiesEl.appendChild(col);
+        });
+        console.log('정책 표시 완료:', advice.policies.length, '개');
+    } else {
+        console.log('정책 요소 또는 데이터 없음');
+    }
+    
+    console.log('전체 코칭 표시 완료!');
+    
+    // 요약
+    if (advice.summaries) {
+        const creditSummaryEl = document.getElementById('coachCreditSummary');
+        if (creditSummaryEl && advice.summaries.credit) {
+            creditSummaryEl.style.display = 'block';
+            creditSummaryEl.textContent = advice.summaries.credit;
+        }
+        
+        const incomeSummaryEl = document.getElementById('coachIncomeSummary');
+        if (incomeSummaryEl && advice.summaries.income) {
+            incomeSummaryEl.style.display = 'block';
+            incomeSummaryEl.textContent = advice.summaries.income;
+        }
+    }
+}
+
+// KPI 적용 함수
+async function applyKpi() {
+    const btn = document.getElementById('btnApplyKpi');
+    const msg = document.getElementById('applyKpiMsg');
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = '적용 중...';
+        
+        const response = await fetch(`/plan/api/apply-kpi/{{ plan.id }}/`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        });
+        
+        if (response.ok) {
+            msg.textContent = 'KPI가 플랜에 적용되었습니다!';
+            msg.style.display = 'inline';
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 3000);
+        } else {
+            throw new Error('KPI 적용 실패');
+        }
+        
+    } catch (err) {
+        console.error('KPI 적용 실패:', err);
+        msg.textContent = 'KPI 적용에 실패했습니다.';
+        msg.style.display = 'inline';
+        msg.className = 'ms-2 small text-danger';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'KPI 플랜에 적용';
+    }
+}
+
+// 페이지 로드 시 자동 실행
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM 로드 완료');
+    
+    // 코칭 자동 로드 (실제 AI API 호출)
+    setTimeout(() => {
+        console.log('AI 코칭 자동 로드 시작');
+        fetchCoaching();
+    }, 1000);
+    
+    // 새로고침 버튼 이벤트
+    const refreshBtn = document.getElementById('btnFetchCoaching');
+    if (refreshBtn) {
+        console.log('새로고침 버튼 이벤트 등록');
+        refreshBtn.addEventListener('click', function() {
+            console.log('새로고침 버튼 클릭됨');
+            fetchCoaching();
+        });
+    } else {
+        console.log('새로고침 버튼을 찾을 수 없음');
+    }
+    
+    // KPI 적용 버튼 이벤트
+    const applyBtn = document.getElementById('btnApplyKpi');
+    if (applyBtn) {
+        applyBtn.addEventListener('click', applyKpi);
+    }
+});
+</script>
+

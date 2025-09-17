@@ -1,0 +1,880 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}AI 맞춤형 계획 결과 | Much{% endblock %}
+
+{% block content %}
+<!-- User Status Bar -->
+{% if user.is_authenticated %}
+<div class="user-status-bar mb-4">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <div class="user-info">
+          <i class="fas fa-user-circle text-primary me-2"></i>
+          <span class="fw-semibold">{{ user.first_name|default:user.username }}님의 맞춤형 계획</span>
+          <span class="text-muted ms-2">AI가 분석한 결과입니다.</span>
+        </div>
+      </div>
+      <div class="col-md-4 text-md-end">
+        <a href="{% url 'plan:smart_plan_generator' %}" class="btn btn-outline-primary btn-sm me-2">
+          <i class="fas fa-redo me-1"></i>새 계획 생성
+        </a>
+        <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-sign-out-alt me-1"></i>로그아웃
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Hero Section -->
+<div class="hero-section mb-5">
+  <div class="hero-container">
+    <div class="container">
+      <div class="row align-items-center min-height: 35vh;">
+        <div class="col-lg-8">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              <i class="fas fa-chart-line me-3"></i>AI 맞춤형 자산 관리 계획
+            </h1>
+            <p class="hero-subtitle">
+              {{ user_input.age }}세 {{ user_input.occupation }}을 위한<br>
+              월 {{ user_input.monthly_income|floatformat:0 }}원 소득 기반 맞춤형 계획
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="hero-visual">
+            <div class="hero-icon">
+              <i class="fas fa-robot"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Plan Summary -->
+<div class="container mb-5">
+  <div class="row">
+    <div class="col-12">
+      <div class="plan-summary-card">
+        <div class="plan-summary-header">
+          <h3 class="plan-summary-title">
+            <i class="fas fa-clipboard-list me-2"></i>계획 요약
+          </h3>
+          <div class="plan-badge">
+            <i class="fas fa-{{ smart_plan.generated_by == 'ai'|yesno:'robot,calculator' }} me-1"></i>
+            {{ smart_plan.generated_by == 'ai'|yesno:'AI 생성,규칙 기반' }}
+          </div>
+        </div>
+        <div class="plan-summary-content">
+          <p class="plan-summary-text">{{ smart_plan.summary }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Plan Content -->
+<div class="container">
+  <div class="row">
+    <!-- 저축 계획 -->
+    <div class="col-lg-6 mb-4">
+      <div class="plan-section-card">
+        <div class="plan-section-header">
+          <h4 class="plan-section-title">
+            <i class="fas fa-piggy-bank me-2"></i>저축 계획
+          </h4>
+        </div>
+        <div class="plan-section-body">
+          <div class="savings-overview">
+            <div class="savings-rate">
+              <div class="rate-circle">
+                <span class="rate-value">{{ smart_plan.savings_plan.recommended_rate }}%</span>
+                <span class="rate-label">권장 저축률</span>
+              </div>
+            </div>
+            <div class="savings-details">
+              <div class="savings-item">
+                <span class="savings-label">월 저축 목표</span>
+                <span class="savings-amount">{{ smart_plan.savings_plan.monthly_amount|floatformat:0 }}원</span>
+              </div>
+              <div class="savings-breakdown">
+                <div class="breakdown-item">
+                  <span class="breakdown-label">비상자금</span>
+                  <span class="breakdown-amount">{{ smart_plan.savings_plan.breakdown.emergency_fund|floatformat:0 }}원</span>
+                </div>
+                <div class="breakdown-item">
+                  <span class="breakdown-label">투자</span>
+                  <span class="breakdown-amount">{{ smart_plan.savings_plan.breakdown.investment|floatformat:0 }}원</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="savings-targets">
+            <h5 class="targets-title">목표 달성</h5>
+            <div class="target-item">
+              <i class="fas fa-shield-alt target-icon"></i>
+              <div class="target-content">
+                <span class="target-label">6개월 비상자금</span>
+                <span class="target-amount">{{ smart_plan.savings_plan.targets.emergency_fund_6months|floatformat:0 }}원</span>
+              </div>
+            </div>
+            <div class="target-item">
+              <i class="fas fa-chart-line target-icon"></i>
+              <div class="target-content">
+                <span class="target-label">1년 투자 목표</span>
+                <span class="target-amount">{{ smart_plan.savings_plan.targets.investment_1year|floatformat:0 }}원</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 지출 최적화 -->
+    <div class="col-lg-6 mb-4">
+      <div class="plan-section-card">
+        <div class="plan-section-header">
+          <h4 class="plan-section-title">
+            <i class="fas fa-chart-pie me-2"></i>지출 최적화
+          </h4>
+        </div>
+        <div class="plan-section-body">
+          <div class="expense-comparison">
+            <div class="expense-item current">
+              <span class="expense-label">현재 지출</span>
+              <span class="expense-amount">{{ smart_plan.expense_optimization.current_spending|floatformat:0 }}원</span>
+            </div>
+            <div class="expense-arrow">
+              <i class="fas fa-arrow-down"></i>
+            </div>
+            <div class="expense-item recommended">
+              <span class="expense-label">권장 지출</span>
+              <span class="expense-amount">{{ smart_plan.expense_optimization.recommended_spending|floatformat:0 }}원</span>
+            </div>
+          </div>
+          
+          <div class="savings-potential">
+            <div class="potential-amount">
+              <span class="potential-label">절약 가능 금액</span>
+              <span class="potential-value">{{ smart_plan.expense_optimization.savings_potential|floatformat:0 }}원</span>
+            </div>
+          </div>
+          
+          <div class="optimization-tips">
+            <h5 class="tips-title">최적화 팁</h5>
+            <ul class="tips-list">
+              {% for tip in smart_plan.expense_optimization.optimization_tips %}
+              <li class="tip-item">
+                <i class="fas fa-lightbulb tip-icon"></i>
+                <span class="tip-text">{{ tip }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <!-- 청년 혜택 -->
+    {% if smart_plan.youth_benefits %}
+    <div class="col-lg-6 mb-4">
+      <div class="plan-section-card">
+        <div class="plan-section-header">
+          <h4 class="plan-section-title">
+            <i class="fas fa-gift me-2"></i>청년 혜택
+          </h4>
+        </div>
+        <div class="plan-section-body">
+          {% for benefit in smart_plan.youth_benefits %}
+          <div class="benefit-item">
+            <div class="benefit-header">
+              <h5 class="benefit-name">{{ benefit.name }}</h5>
+              <span class="benefit-eligibility">{{ benefit.eligibility }}</span>
+            </div>
+            <p class="benefit-description">{{ benefit.description }}</p>
+            <div class="benefit-details">
+              <div class="benefit-contribution">
+                <span class="contribution-label">월 납입</span>
+                <span class="contribution-amount">{{ benefit.monthly_contribution|floatformat:0 }}원</span>
+              </div>
+              <div class="benefit-match">
+                <span class="match-label">정부 지원</span>
+                <span class="match-amount">{{ benefit.government_match|floatformat:0 }}원</span>
+              </div>
+            </div>
+            {% if benefit.application_link %}
+            <a href="{{ benefit.application_link }}" target="_blank" class="benefit-link">
+              <i class="fas fa-external-link-alt me-1"></i>신청하기
+            </a>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    
+    <!-- 금융 상품 -->
+    {% if smart_plan.financial_products %}
+    <div class="col-lg-6 mb-4">
+      <div class="plan-section-card">
+        <div class="plan-section-header">
+          <h4 class="plan-section-title">
+            <i class="fas fa-credit-card me-2"></i>추천 금융 상품
+          </h4>
+        </div>
+        <div class="plan-section-body">
+          {% for product in smart_plan.financial_products %}
+          <div class="product-item">
+            <div class="product-header">
+              <h5 class="product-name">{{ product.name }}</h5>
+              <span class="product-type">{{ product.type }}</span>
+            </div>
+            <p class="product-reason">{{ product.reason }}</p>
+            <div class="product-details">
+              <div class="product-amount">
+                <span class="amount-label">월 납입</span>
+                <span class="amount-value">{{ product.monthly_amount|floatformat:0 }}원</span>
+              </div>
+            </div>
+            <div class="product-benefits">
+              <h6 class="benefits-title">주요 혜택</h6>
+              <ul class="benefits-list">
+                {% for benefit in product.benefits %}
+                <li class="benefit-point">
+                  <i class="fas fa-check benefit-check"></i>
+                  <span>{{ benefit }}</span>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  
+  <!-- 실행 계획 -->
+  <div class="row">
+    <div class="col-12">
+      <div class="plan-section-card">
+        <div class="plan-section-header">
+          <h4 class="plan-section-title">
+            <i class="fas fa-tasks me-2"></i>단계별 실행 계획
+          </h4>
+        </div>
+        <div class="plan-section-body">
+          <div class="action-timeline">
+            <div class="timeline-item">
+              <div class="timeline-marker">
+                <i class="fas fa-calendar-week"></i>
+              </div>
+              <div class="timeline-content">
+                <h5 class="timeline-title">1개월 내 실행</h5>
+                <ul class="timeline-list">
+                  {% for action in smart_plan.action_plan.1_month %}
+                  <li class="timeline-action">
+                    <i class="fas fa-arrow-right action-arrow"></i>
+                    <span>{{ action }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+            
+            <div class="timeline-item">
+              <div class="timeline-marker">
+                <i class="fas fa-calendar-alt"></i>
+              </div>
+              <div class="timeline-content">
+                <h5 class="timeline-title">3개월 내 달성</h5>
+                <ul class="timeline-list">
+                  {% for action in smart_plan.action_plan.3_months %}
+                  <li class="timeline-action">
+                    <i class="fas fa-arrow-right action-arrow"></i>
+                    <span>{{ action }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+            
+            <div class="timeline-item">
+              <div class="timeline-marker">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div class="timeline-content">
+                <h5 class="timeline-title">6개월 내 달성</h5>
+                <ul class="timeline-list">
+                  {% for action in smart_plan.action_plan.6_months %}
+                  <li class="timeline-action">
+                    <i class="fas fa-arrow-right action-arrow"></i>
+                    <span>{{ action }}</span>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="container mt-5">
+  <div class="row">
+    <div class="col-12 text-center">
+      <div class="action-buttons">
+        <a href="{% url 'plan:smart_plan_generator' %}" class="btn btn-outline-primary btn-lg me-3">
+          <i class="fas fa-redo me-2"></i>새 계획 생성
+        </a>
+        <button class="btn btn-primary btn-lg" onclick="window.print()">
+          <i class="fas fa-print me-2"></i>계획서 출력
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Smart Plan Result Styles */
+.plan-summary-card {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  border-radius: 20px;
+  color: white;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(29, 80, 145, 0.3);
+}
+
+.plan-summary-header {
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.plan-summary-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.plan-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.plan-summary-content {
+  padding: 0 2rem 2rem;
+}
+
+.plan-summary-text {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.plan-section-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #f1f5f9;
+  overflow: hidden;
+  height: 100%;
+}
+
+.plan-section-header {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.plan-section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.plan-section-body {
+  padding: 1.5rem;
+}
+
+/* Savings Plan Styles */
+.savings-overview {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.rate-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  text-align: center;
+}
+
+.rate-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.rate-label {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  margin-top: 0.5rem;
+}
+
+.savings-details {
+  flex: 1;
+}
+
+.savings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.savings-label {
+  font-weight: 500;
+  color: #64748b;
+}
+
+.savings-amount {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1d5091;
+}
+
+.savings-breakdown {
+  margin-top: 1rem;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.breakdown-label {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.breakdown-amount {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.savings-targets {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.targets-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.target-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+
+.target-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1d5091;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.target-content {
+  flex: 1;
+}
+
+.target-label {
+  display: block;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.target-amount {
+  display: block;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+/* Expense Optimization Styles */
+.expense-comparison {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.expense-item {
+  flex: 1;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.expense-item.current {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.expense-item.recommended {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.expense-label {
+  display: block;
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.expense-amount {
+  display: block;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.expense-item.current .expense-amount {
+  color: #dc2626;
+}
+
+.expense-item.recommended .expense-amount {
+  color: #059669;
+}
+
+.expense-arrow {
+  color: #1d5091;
+  font-size: 1.2rem;
+}
+
+.savings-potential {
+  background: linear-gradient(135deg, #1d5091 0%, #2c5aa0 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.potential-label {
+  display: block;
+  font-size: 0.9rem;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+
+.potential-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.optimization-tips {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.tips-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.tips-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.tip-icon {
+  color: #1d5091;
+  margin-top: 0.2rem;
+}
+
+.tip-text {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Benefit and Product Styles */
+.benefit-item, .product-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.benefit-item:last-child, .product-item:last-child {
+  margin-bottom: 0;
+}
+
+.benefit-header, .product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.benefit-name, .product-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.benefit-eligibility, .product-type {
+  background: #1d5091;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.benefit-description, .product-reason {
+  color: #64748b;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.benefit-details, .product-details {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+
+.benefit-contribution, .benefit-match, .product-amount {
+  text-align: center;
+}
+
+.contribution-label, .match-label, .amount-label {
+  display: block;
+  color: #64748b;
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.contribution-amount, .match-amount, .amount-value {
+  display: block;
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.benefit-link {
+  color: #1d5091;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.benefit-link:hover {
+  color: #2c5aa0;
+  text-decoration: underline;
+}
+
+.product-benefits {
+  margin-top: 1rem;
+}
+
+.benefits-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.benefit-point {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+
+.benefit-check {
+  color: #059669;
+  font-size: 0.8rem;
+}
+
+/* Action Timeline Styles */
+.action-timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.action-timeline::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -2rem;
+  top: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #1d5091;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.timeline-content {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.timeline-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+}
+
+.timeline-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.timeline-action {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.action-arrow {
+  color: #1d5091;
+  font-size: 0.8rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  padding: 2rem 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .savings-overview {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .rate-circle {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .rate-value {
+    font-size: 1.5rem;
+  }
+  
+  .expense-comparison {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .expense-arrow {
+    transform: rotate(90deg);
+  }
+  
+  .benefit-details, .product-details {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .action-timeline {
+    padding-left: 1.5rem;
+  }
+  
+  .timeline-marker {
+    left: -1.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.8rem;
+  }
+}
+</style>
+{% endblock %}
+

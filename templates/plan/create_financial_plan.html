@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+
+{% block title %}자산 관리 플랜 생성 - Much{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section mb-5">
+  <div class="hero-container">
+    <div class="container">
+      <div class="row align-items-center min-vh-30">
+        <div class="col-lg-8">
+          <div class="hero-content">
+            <h1 class="hero-title">
+              <i class="fas fa-chart-pie me-3"></i>자산 관리 플랜 생성
+            </h1>
+            <p class="hero-subtitle">
+              AI 예측 결과를 바탕으로 한 맞춤형 자산 관리 플랜을 생성합니다.<br>
+              개인의 위험 성향과 목표에 맞는 최적의 플랜을 선택하세요.
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="hero-visual">
+            <div class="hero-icon">
+              <i class="fas fa-chart-pie"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+    <!-- AI 예측 결과 요약 -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <h5 class="info-card-title">
+                        <i class="fas fa-chart-line me-2"></i>AI 예측 결과 요약
+                    </h5>
+                </div>
+                <div class="info-card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <h6 class="text-muted">예상 월 소득</h6>
+                            <h4 class="text-primary">{{ prediction.predicted_monthly_income|floatformat:0 }}원</h4>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h6 class="text-muted">예상 연 소득</h6>
+                            <h4 class="text-success">{{ prediction.predicted_yearly_income|floatformat:0 }}원</h4>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h6 class="text-muted">신뢰도</h6>
+                            <h4 class="text-warning">{{ prediction.confidence_level|floatformat:1 }}%</h4>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h6 class="text-muted">변동성</h6>
+                            <h4 class="text-info">{{ prediction.income_volatility|floatformat:1 }}%</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 플랜 설정 폼 -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-card">
+                <div class="form-card-header">
+                    <h4 class="form-card-title">
+                        <i class="fas fa-cogs me-2"></i>플랜 설정
+                    </h4>
+                </div>
+                <div class="form-card-body">
+                    <form method="post" id="planForm">
+                        {% csrf_token %}
+
+                        <!-- 플랜 유형 선택 -->
+                        <div class="mb-4">
+                            <label for="plan_type" class="form-label fw-bold">플랜 유형</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <div class="plan-type-card text-center p-4 h-100" data-type="conservative">
+                                        <div class="plan-type-icon mb-3">
+                                            <i class="fas fa-shield-alt" style="font-size: 3rem; color: #1d5091;"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-3">보수형</h6>
+                                        <p class="text-muted">안정성 중시</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="plan-type-card text-center p-4 h-100" data-type="moderate">
+                                        <div class="plan-type-icon mb-3">
+                                            <i class="fas fa-balance-scale" style="font-size: 3rem; color: #1d5091;"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-3">균형형</h6>
+                                        <p class="text-muted">안정성과 수익성 균형</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <div class="plan-type-card text-center p-4 h-100" data-type="aggressive">
+                                        <div class="plan-type-icon mb-3">
+                                            <i class="fas fa-rocket" style="font-size: 3rem; color: #1d5091;"></i>
+                                        </div>
+                                        <h6 class="fw-bold mb-3">공격형</h6>
+                                        <p class="text-muted">높은 수익 추구</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="plan_type" name="plan_type" value="moderate" required>
+                        </div>
+
+                        <!-- 목표 저축률 -->
+                        <div class="mb-4">
+                            <label for="target_savings_rate" class="form-label fw-bold">목표 저축률 (%)</label>
+                            <input type="range" class="form-range" id="target_savings_rate" name="target_savings_rate"
+                                min="10" max="50" value="20" oninput="updateSavingsDisplay(this.value)">
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">10%</small>
+                                <span id="savings_display" class="fw-bold text-primary">20%</span>
+                                <small class="text-muted">50%</small>
+                            </div>
+                        </div>
+
+                        <!-- 비상금 목표 -->
+                        <div class="mb-4">
+                            <label for="emergency_fund_target" class="form-label fw-bold">비상금 목표 (원)</label>
+                            <input type="number" class="form-control" id="emergency_fund_target"
+                                name="emergency_fund_target" min="0" step="100000" placeholder="예: 10000000">
+                            <div class="form-text">
+                                권장: 월 소득의 3-6개월분 ({{ recommended_emergency_text }})
+                            </div>
+                        </div>
+
+                        <!-- 현재 신용등급 -->
+                        <div class="mb-4">
+                            <label for="current_credit_score" class="form-label fw-bold">현재 신용등급</label>
+                            <select class="form-select" id="current_credit_score" name="current_credit_score" required>
+                                <option value="">신용등급을 선택하세요</option>
+                                <option value="300">300-399 (매우 낮음)</option>
+                                <option value="400">400-499 (낮음)</option>
+                                <option value="500">500-599 (보통 낮음)</option>
+                                <option value="600">600-699 (보통)</option>
+                                <option value="700">700-799 (좋음)</option>
+                                <option value="800">800-899 (매우 좋음)</option>
+                                <option value="900">900-950 (최고)</option>
+                            </select>
+                        </div>
+
+                        <!-- 실시간 플랜 미리보기 -->
+                        <div id="planPreview" class="mb-4" style="display: none;">
+                            <div class="info-card">
+                                <div class="info-card-header">
+                                    <h5 class="info-card-title">
+                                        <i class="fas fa-eye me-2"></i>플랜 미리보기
+                                    </h5>
+                                </div>
+                                <div class="info-card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted">월별 계획</h6>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-home text-primary me-2"></i>주거비(고정): <span
+                                                        id="preview_housing">-</span></li>
+                                                <li><i class="fas fa-utensils text-success me-2"></i>식비: <span
+                                                        id="preview_food">-</span></li>
+                                                <li><i class="fas fa-car text-info me-2"></i>교통비: <span
+                                                        id="preview_transport">-</span></li>
+                                                <li><i class="fas fa-heart text-danger me-2"></i>의료비: <span
+                                                        id="preview_healthcare">-</span></li>
+                                                <li><i class="fas fa-wifi text-secondary me-2"></i>통신비(고정): <span
+                                                        id="preview_telecom">-</span></li>
+                                                <li><i class="fas fa-bolt text-warning me-2"></i>공과금(고정): <span
+                                                        id="preview_utilities">-</span></li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="text-muted">저축 및 투자</h6>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-piggy-bank text-warning me-2"></i>저축: <span
+                                                        id="preview_savings">-</span></li>
+                                                <li><i class="fas fa-chart-line text-success me-2"></i>투자: <span
+                                                        id="preview_investment">-</span></li>
+                                                <li><i class="fas fa-credit-card text-info me-2"></i>신용카드: <span
+                                                        id="preview_credit">-</span></li>
+                                                <li><i class="fas fa-file-invoice text-secondary me-2"></i>대출상환: <span
+                                                        id="preview_loan">-</span></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 제출 버튼 -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-form-submit btn-lg">
+                                <i class="fas fa-magic me-2"></i>AI 플랜 생성하기
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const planTypeCards = document.querySelectorAll('.plan-type-card');
+        const planTypeInput = document.getElementById('plan_type');
+        const planPreview = document.getElementById('planPreview');
+
+        // 플랜 유형 선택
+        planTypeCards.forEach(card => {
+            card.addEventListener('click', function () {
+                // 모든 카드에서 선택 상태 제거
+                planTypeCards.forEach(c => {
+                    c.classList.remove('border-primary', 'bg-primary', 'text-white');
+                });
+
+                // 선택된 카드에 스타일 적용
+                this.classList.add('border-primary', 'bg-primary', 'text-white');
+
+                // 숨겨진 입력 필드에 값 설정
+                planTypeInput.value = this.dataset.type;
+
+                // 플랜 미리보기 업데이트
+                updatePlanPreview();
+            });
+        });
+
+        // 기본 선택 (균형형)
+        document.querySelector('[data-type="moderate"]').click();
+
+        // 저축률 변경 시 미리보기 업데이트
+        document.getElementById('target_savings_rate').addEventListener('input', updatePlanPreview);
+
+        function updateSavingsDisplay(value) {
+            document.getElementById('savings_display').textContent = value + '%';
+            updatePlanPreview();
+        }
+
+        function updatePlanPreview() {
+            const planType = planTypeInput.value;
+            const savingsRate = document.getElementById('target_savings_rate').value;
+            const monthlyIncome = {{ prediction.predicted_monthly_income| floatformat: 0
+        }
+    };
+    // MyData 고정 지출 (개발용 더미)
+    const fixed = { housing: 800000, telecom: 70000, utilities: 120000 };
+        }
+    };
+    if (!planType) return;
+
+
+
+    // 플랜 유형별 비율 설정
+    const ratios = {
+        conservative: {
+            housing: 0.25,
+            food: 0.15,
+            transport: 0.08,
+            healthcare: 0.05,
+            entertainment: 0.05,
+            other: 0.02,
+            investment: 0.15
+        },
+        moderate: {
+            housing: 0.30,
+            food: 0.15,
+            transport: 0.10,
+            healthcare: 0.05,
+            entertainment: 0.10,
+            other: 0.05,
+            investment: 0.20
+        },
+        aggressive: {
+            housing: 0.30,
+            food: 0.15,
+            transport: 0.10,
+            healthcare: 0.05,
+            entertainment: 0.10,
+            other: 0.05,
+            investment: 0.25
+        }
+    };
+
+    const ratio = ratios[planType];
+    const savingsAmount = monthlyIncome * (savingsRate / 100);
+    const investmentAmount = monthlyIncome * ratio.investment;
+
+    // 미리보기 업데이트
+    document.getElementById('preview_housing').textContent = fixed.housing.toLocaleString() + '원';
+    document.getElementById('preview_food').textContent =
+        (monthlyIncome * ratio.food).toLocaleString() + '원';
+    document.getElementById('preview_transport').textContent =
+        (monthlyIncome * ratio.transport).toLocaleString() + '원';
+    document.getElementById('preview_healthcare').textContent =
+        (monthlyIncome * ratio.healthcare).toLocaleString() + '원';
+    document.getElementById('preview_telecom').textContent = fixed.telecom.toLocaleString() + '원';
+    document.getElementById('preview_utilities').textContent = fixed.utilities.toLocaleString() + '원';
+    document.getElementById('preview_savings').textContent =
+        savingsAmount.toLocaleString() + '원';
+    document.getElementById('preview_investment').textContent =
+        investmentAmount.toLocaleString() + '원';
+    document.getElementById('preview_credit').textContent =
+        (monthlyIncome * 0.05).toLocaleString() + '원';
+    document.getElementById('preview_loan').textContent =
+        (monthlyIncome * 0.05).toLocaleString() + '원';
+
+    planPreview.style.display = 'block';
+    }
+});
+</script>
+
+<style>
+/* 플랜 유형 카드 호버 효과 */
+.plan-type-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+}
+
+.plan-type-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+}
+
+.plan-type-card.bg-primary {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(29, 80, 145, 0.3);
+}
+
+.plan-type-card.bg-primary .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* 슬라이더 스타일링 */
+.form-range::-webkit-slider-thumb {
+    background-color: #1d5091;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.form-range::-moz-range-thumb {
+    background-color: #1d5091;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* 폼 컨트롤 포커스 스타일 */
+.form-control:focus,
+.form-select:focus {
+    border-color: #1d5091;
+    box-shadow: 0 0 0 0.2rem rgba(29, 80, 145, 0.25);
+}
+
+/* 버튼 호버 효과 */
+.btn-form-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(29, 80, 145, 0.4);
+}
+</style>
+{% endblock %}

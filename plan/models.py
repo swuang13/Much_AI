@@ -127,3 +127,22 @@ class MonthlyPlan(models.Model):
     def disposable_income(self):
         """가처분 소득 계산"""
         return self.expected_income - self.total_expenses - self.credit_card_payment - self.loan_payment
+
+
+class CreditScoreSnapshot(models.Model):
+    """사용자 신용점수 스냅샷"""
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='credit_snapshots')
+    score = models.IntegerField(default=0)
+    utilization_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+    on_time_payment_ratio = models.DecimalField(max_digits=5, decimal_places=2, default=100)
+    credit_age_months = models.IntegerField(default=0)
+    hard_inquiries_12m = models.IntegerField(default=0)
+    credit_mix_score = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.score}점"
