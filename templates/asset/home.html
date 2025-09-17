@@ -50,9 +50,6 @@
                 </form>
                 <form method="post" action="{% url 'asset:demo_login' %}" class="d-inline">
                   {% csrf_token %}
-                  <button class="btn btn-hero-secondary">
-                    <i class="fas fa-user-circle me-2"></i>데모 계정
-                  </button>
                 </form>
               {% else %}
                 <a href="{% url 'asset:auth_page' %}" class="btn btn-hero-primary">

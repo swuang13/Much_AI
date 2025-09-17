@@ -397,27 +397,113 @@ def _derive_risk_profile(score_100: int | None, dti_pct: float | None, savings_r
 
 
 def _clean_chat_response(text: str) -> str:
-    """간단 후처리: 중복 라인 제거, 공백 정리, 길이 제한."""
+    """챗봇 응답 후처리: 반복 제거, 가독성 개선, 구조화."""
     if not text:
         return ""
+    
     import re
-    # 줄 단위 중복 제거(순서 유지)
-    seen = set()
-    lines = []
-    for raw in text.splitlines():
-        line = re.sub(r"\s+", " ", raw).strip()
-        if not line:
+    
+    # 1. 기본 정리
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    # 2. 강력한 반복 패턴 제거
+    # 문장 단위 반복 제거
+    sentences = re.split(r'[.!?]\s*', text)
+    unique_sentences = []
+    seen_sentences = set()
+    
+    for sentence in sentences:
+        sentence = sentence.strip()
+        if not sentence:
             continue
-        key = line.lower()
-        if key in seen:
+        
+        # 문장의 핵심 키워드 추출 (첫 30자)
+        key = sentence[:30].lower()
+        if key in seen_sentences:
             continue
-        seen.add(key)
-        lines.append(line)
-    cleaned = "\n".join(lines)
-    # 과도한 반복 어휘 축약(간단 규칙)
-    cleaned = re.sub(r"(지분|정리|조정)[^\n]*\n(?:[^\n]*\n){0,1}\s*\1", r"\1", cleaned, flags=re.IGNORECASE)
-    # 길이 제한
-    return cleaned[:1800]
+        
+        # 유사한 문장 패턴 제거
+        is_duplicate = False
+        for seen in seen_sentences:
+            if len(key) > 10 and len(seen) > 10:
+                # 70% 이상 유사하면 중복으로 간주
+                similarity = len(set(key.split()) & set(seen.split())) / max(len(key.split()), len(seen.split()))
+                if similarity > 0.7:
+                    is_duplicate = True
+                    break
+        
+        if not is_duplicate:
+            seen_sentences.add(key)
+            unique_sentences.append(sentence)
+    
+    # 3. 문장 재구성
+    cleaned = '. '.join(unique_sentences)
+    if cleaned and not cleaned.endswith('.'):
+        cleaned += '.'
+    
+    # 4. 특정 반복 패턴 제거
+    patterns = [
+        r'(신용점수에 비해 지출 비율이 높다는 것을 의미합니다\.?\s*){2,}',
+        r'(신용점수에 비해 지출 비율이 낮은 신용점수를 선택하는 것이 좋습니다\.?\s*){2,}',
+        r'(저축률을 높이기 위한 수단\s*:\s*\d+\.?\s*)+',
+        r'(방법은 다음과 같습니다\.?\s*){2,}',
+        r'(DTI는\s*){2,}',
+        r'(예를 들어\s*){2,}',
+    ]
+    
+    for pattern in patterns:
+        cleaned = re.sub(pattern, lambda m: m.group(1) if m.group(1) else '', cleaned, flags=re.IGNORECASE)
+    
+    # 5. 구조화된 응답 생성 (3-5줄)
+    sentences = [s.strip() for s in cleaned.split('.') if s.strip()]
+    
+    if len(sentences) <= 3:
+        # 3줄 이하면 그대로
+        result = '. '.join(sentences)
+    elif len(sentences) <= 5:
+        # 5줄 이하면 그대로
+        result = '. '.join(sentences)
+    else:
+        # 5줄 초과면 핵심 3-4줄만 선택
+        # 첫 문장 + 중간 1-2문장 + 마지막 문장
+        selected = [sentences[0]]
+        if len(sentences) > 2:
+            mid_start = len(sentences) // 2
+            selected.append(sentences[mid_start])
+        if len(sentences) > 3:
+            selected.append(sentences[-1])
+        result = '. '.join(selected)
+    
+    # 6. 최종 정리
+    result = re.sub(r'\s+', ' ', result).strip()
+    if result and not result.endswith('.'):
+        result += '.'
+    
+    return result[:400]  # 400자로 제한
+
+
+def _get_fallback_response(user_message: str, assessment_data: dict) -> str:
+    """AI 응답 실패 시 사용할 폴백 응답"""
+    message_lower = user_message.lower()
+    
+    # 키워드 기반 간단한 응답
+    if any(word in message_lower for word in ['저축률', '저축', '절약']):
+        return "저축률을 높이려면 월 수입의 20% 이상을 저축하세요. 자동이체로 매월 50만원씩 적금에 넣고, 불필요한 지출을 줄이는 것이 좋습니다."
+    
+    elif any(word in message_lower for word in ['dti', '부채', '대출']):
+        return "DTI는 월 소득 대비 부채 상환액 비율입니다. 40% 이하로 유지하세요. 기존 대출을 정리하고 새로운 대출은 신중하게 결정하세요."
+    
+    elif any(word in message_lower for word in ['투자', '포트폴리오', '자산']):
+        return "안정적인 투자를 위해 주식 60%, 채권 30%, 현금 10% 비율로 분산투자하세요. 정기적으로 리밸런싱하는 것이 중요합니다."
+    
+    elif any(word in message_lower for word in ['신용점수', '신용']):
+        return "신용점수 향상을 위해 카드 대금을 매월 정시에 납부하고, 신용카드 이용률을 30% 이하로 유지하세요. 새로운 대출 신청은 신중하게 하세요."
+    
+    elif any(word in message_lower for word in ['비상금', '비상자금', '유동성']):
+        return "비상자금은 월 생활비의 3-6개월분을 준비하세요. 예금이나 MMF 같은 안전한 상품에 보관하고, 언제든 찾을 수 있도록 하세요."
+    
+    else:
+        return "재무 관리에 대해 구체적인 질문을 해주시면 더 정확한 답변을 드릴 수 있습니다. 저축률, DTI, 투자 등에 대해 물어보세요."
 
 
 def _parse_korean_currency(text: str) -> int:
@@ -846,41 +932,19 @@ def chat_with_assessment(request, pk: int):
         )
 
         chat_context = f"""
-진단 요약:
-- 등급: {assessment.grade} / 점수: {(assessment_data.get('score') or (assessment.result or {}).get('score_100') or 0)}
-- 최근 6개월 수입 {assessment.income_6m:,}원 / 지출 {assessment.expense_6m:,}원
-- 신용점수 {assessment.credit_score}점, 리스크 성향: {risk_profile}
-- 핵심지표: 저축률 {(metrics.get('savings_rate_pct') or (assessment.result or {}).get('metrics', {}).get('savings_rate_pct') or 0)}%, DTI {(metrics.get('dti_pct') or (assessment.result or {}).get('metrics', {}).get('dti_pct') or 0)}%
+사용자 정보:
+- 등급: {assessment.grade} (점수: {(assessment_data.get('score') or (assessment.result or {}).get('score_100') or 0)}점)
+- 월 수입: {assessment.income_6m//6:,}원, 월 지출: {assessment.expense_6m//6:,}원
+- 신용점수: {assessment.credit_score}점, 리스크 성향: {risk_profile}
+- 저축률: {(metrics.get('savings_rate_pct') or (assessment.result or {}).get('metrics', {}).get('savings_rate_pct') or 0)}%, DTI: {(metrics.get('dti_pct') or (assessment.result or {}).get('metrics', {}).get('dti_pct') or 0)}%
 
-대화 지침:
-1) 질문 의도에 맞춰 3~6줄의 구체적인 실행 조언을 제공한다.
-2) 숫자/비중/기간을 반드시 포함한다(예: 비상자금 300만원, 월 20만원 적립 15개월).
-3) ETF/적금/대출/보험 등 실제 수단을 예시로 들되 특정 상품명 언급은 피한다.
-4) 사용자 리스크 성향({risk_profile})에 맞춰 주식/채권/현금/대체 비중을 제시한다.
-5) 중복 문구와 동어 반복을 금지하고, 동일 문장 구조의 나열을 피한다.
+위 정보를 바탕으로 질문에 대해 3-5줄의 구체적이고 실용적인 답변을 제공하세요.
 """
 
-        # 챗봇용 시스템 프롬프트(쉬운 한국어 + 단위 규칙 + 섹션)
+        # 챗봇용 시스템 프롬프트(매우 간결하게)
         chat_system_prompt = """
-너는 한국 개인재무/투자 자문가다. 아래 규칙을 엄격히 따른다.
-
-[언어/표현]
-- 쉬운 한국어를 사용하고 어려운 용어는 일상어로 바꿔 설명한다(예: 유동성→ 비상금/쉽게 찾을 수 있는 돈).
-- 중복/장황한 문장은 금지. 3~6개의 짧은 문단으로 답변하고 각 문단 첫 줄은 굵게 요약한다.
-
-[숫자/단위]
-- 금액은 '원' 단위로 쉼표 포함 표기(예: 2,330,000원). 잘못된 '2333451 만원' 같은 표기는 금지.
-- 1억 이상은 'X.X억 원'처럼 말하고, 필요 시 괄호로 원 금액을 함께 표기한다.
-- 비중/수익률은 %로 표기하고, 자산 비중의 합은 100%가 되도록 제시한다.
-
-[내용]
-- 진단 데이터(점수, 저축률, DTI, 월 여유자금, 리스크 성향) 범위를 벗어난 가정은 하지 않는다.
-- 포트폴리오: 주식/채권/현금/대체 비중(합 100%)과 리밸런싱 주기를 제안한다.
-- 현금흐름: 월 납입액·기간·비상자금 목표를 수치로 제시한다.
-- 부채/위험: DTI·금리·카드 이용률 등 실천 팁을 구체적으로 제시한다.
-- 다음 30일 액션: 체크리스트 3~5개(간결 명령형)로 제시한다.
-
-출력은 한국어 마크다운만 사용한다.
+개인재무 상담사입니다. 2-3문장으로 간결하게 답변하세요.
+구체적인 숫자와 실행방법을 포함하고, 반복하지 마세요.
 """
 
         # 위험도 높은 문의 즉시 차단/대안 제시(월 이자 20% 이상 등)
@@ -893,14 +957,23 @@ def chat_with_assessment(request, pk: int):
             ai_response = hf_chat(
                 chat_system_prompt + "\n\n" + chat_context,
                 user_message,
-                max_tokens=800,
-                temperature=0.15,
-                top_p=0.9,
+                max_tokens=200,  # 더 짧게
+                temperature=0.4,  # 더 자연스럽게
+                top_p=0.7,  # 반복 감소
             )
-            ai_response = _clean_chat_response(ai_response or "") or "죄송합니다. 답변을 생성할 수 없습니다."
-            return JsonResponse({'success': True, 'response': ai_response})
+            
+            # 응답 후처리
+            cleaned_response = _clean_chat_response(ai_response or "")
+            
+            # 응답이 너무 짧거나 비어있으면 폴백 사용
+            if not cleaned_response or len(cleaned_response.strip()) < 20:
+                cleaned_response = _get_fallback_response(user_message, assessment_data)
+            
+            return JsonResponse({'success': True, 'response': cleaned_response})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': f'AI 호출 오류: {str(e)}'})
+            # AI 호출 실패 시 폴백 응답
+            fallback_response = _get_fallback_response(user_message, assessment_data)
+            return JsonResponse({'success': True, 'response': fallback_response})
         
     except Exception as e:
         return JsonResponse({
